@@ -6719,4 +6719,9 @@ public interface GwtMessages extends Messages {
 	@DefaultMessage("Special Event")
 	String utilSqlUtilizationTypeSpecialEvent();
 	
+	@DefaultMessage("Import of {0}")
+	String itemImportActionName(String type);
+	
+	@DefaultMessage("Export of {0}")
+	String itemExportActionName(String type);
 }
