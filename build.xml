@@ -113,7 +113,7 @@
 			<jvmarg value="${macJvmArgs}"/>
 			<jvmarg value="-Dgwt.persistentunitcache=false"/>
 			<jvmarg value="-Duser.language=en"/>
-			<arg value="org.unitime.timetable.gwt.UniTime"/>
+			<arg value="org.unitime.timetable.gwt.UniTimeDev"/>
 			<arg value="-localWorkers"/>
 			<arg value="4"/>
 		</java>
@@ -428,7 +428,7 @@
 			<jvmarg value="-Duser.language=en"/>
 			<arg value="-war"/>
 			<arg value="${env.TOMCAT_HOME}/webapps/UniTime"/>
-			<arg value="org.unitime.timetable.gwt.UniTime"/>
+			<arg value="org.unitime.timetable.gwt.UniTimeDev"/>
 			<arg value="-localWorkers"/>
 			<arg value="4"/>
 		</java>

@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="JavaSource"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry excluding="**" kind="src" output="target/classes" path="JavaSource">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="con" path="com.gwtplugins.gwt.eclipse.core.GWT_CONTAINER"/>
-
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/activation-1.1.jar" sourcepath="3rd_party/sources/activation-1.1-sources.jar"/>
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/commons-beanutils-1.8.0.jar" sourcepath="3rd_party/sources/commons-beanutils-1.8.0-sources.jar"/>
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/commons-chain-1.2.jar" sourcepath="3rd_party/sources/commons-chain-1.2-sources.jar"/>
@@ -91,15 +98,41 @@
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/commons-codec-1.10.jar" sourcepath="3rd_party/sources/commons-codec-1.10-sources.jar"/>
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/commons-collections4-4.1.jar" sourcepath="3rd_party/sources/commons-collections4-4.1-sources.jar"/>
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/poi-3.17.jar" sourcepath="3rd_party/sources/poi-3.17-sources.jar"/>
-
 	<classpathentry kind="lib" path="3rd_party/ant-1.8.4.jar" sourcepath="3rd_party/sources/ant-1.8.4-sources.jar"/>
-	<!--
-	<classpathentry kind="lib" path="3rd_party/gwt-dev-2.9.0.jar" sourcepath="3rd_party/sources/gwt-dev-2.9.0-sources.jar"/>
-	<classpathentry kind="lib" path="3rd_party/gwt-user-2.9.0.jar" sourcepath="3rd_party/sources/gwt-user-2.9.0-sources.jar"/>
-	<classpathentry kind="lib" path="3rd_party/jsp-api-2.2.jar" sourcepath="3rd_party/sources/jsp-api-2.2-sources.jar"/>
-	<classpathentry kind="lib" path="3rd_party/javax.servlet-api-3.0.1.jar" sourcepath="3rd_party/sources/javax.servlet-api-3.0.1-sources.jar"/>
-	<classpathentry kind="lib" path="3rd_party/validation-api-1.0.0.GA.jar" sourcepath="3rd_party/sources/validation-api-1.0.0.GA-sources.jar"/>
-	 -->
-
-	<classpathentry kind="output" path="WebContent/WEB-INF/classes"/>
+	<classpathentry kind="src" output="target/classes" path="target/src">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" output="target/test-classes" path="src/test/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="test" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" path="target/generated-sources/annotations">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="ignore_optional_problems" value="true"/>
+			<attribute name="m2e-apt" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" output="target/test-classes" path="target/generated-test-sources/test-annotations">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="ignore_optional_problems" value="true"/>
+			<attribute name="m2e-apt" value="true"/>
+			<attribute name="test" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="target/classes"/>
 </classpath>
