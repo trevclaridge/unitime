@@ -26,8 +26,12 @@ import org.springframework.security.ldap.authentication.LdapAuthenticationProvid
 import org.springframework.security.ldap.authentication.LdapAuthenticator;
 import org.springframework.security.ldap.userdetails.LdapAuthoritiesPopulator;
 import org.unitime.timetable.defaults.ApplicationProperty;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class SpringLdapAuthenticationProvider extends LdapAuthenticationProvider {
+	private static Log sLog = LogFactory.getLog(SpringLdapAuthenticationProvider.class);
+
 	
 	public SpringLdapAuthenticationProvider(LdapAuthenticator authenticator) {
 		super(authenticator);
@@ -39,8 +43,10 @@ public class SpringLdapAuthenticationProvider extends LdapAuthenticationProvider
 
 	@Override
     protected DirContextOperations doAuthentication(UsernamePasswordAuthenticationToken authentication) {
+		sLog.info("TREVOR CLARIDGE: doAuthentication() ldap provider ");
+
 		if (ApplicationProperty.AuthenticationLdapUrl.defaultValue().equals(ApplicationProperty.AuthenticationLdapUrl.value()))
-			throw new BadCredentialsException("LDAP authentication is not configured.");
+			throw new BadCredentialsException("TREVOR LDAP authentication is not configured.");
 		return super.doAuthentication(authentication);
 	}
 

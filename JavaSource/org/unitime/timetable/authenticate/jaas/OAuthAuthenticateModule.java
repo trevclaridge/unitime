@@ -107,42 +107,44 @@ public class OAuthAuthenticateModule extends AuthenticateModule {
 	 */
 	public boolean login() throws LoginException {
 		// Skip this module when LDAP provider is not set
-		if (ApplicationProperties
-				.getProperty("tmtbl.authenticate.ldap.provider") == null)
-			return false;
+		// if (ApplicationProperties
+		// 		.getProperty("tmtbl.authenticate.ldap.provider") == null)
+		// 	return false;
 
-		sLog.debug("Performing ldap authentication ... ");
+		// sLog.debug("Performing ldap authentication ... ");
 
-		// Get callback parameters
-		if (getCallbackHandler() == null)
-			throw new LoginException("Error: no CallbackHandler available ");
+		// // Get callback parameters
+		// if (getCallbackHandler() == null)
+		// 	throw new LoginException("Error: no CallbackHandler available ");
 
-		Callback[] callbacks = new Callback[2];
-		callbacks[0] = new NameCallback("User Name: ");
-		callbacks[1] = new PasswordCallback("Password: ", true);
+		// Callback[] callbacks = new Callback[2];
+		// callbacks[0] = new NameCallback("User Name: ");
+		// callbacks[1] = new PasswordCallback("Password: ", true);
 
-		try {
-			getCallbackHandler().handle(callbacks);
-			String n = ((NameCallback) callbacks[0]).getName();
-			String p = String.valueOf(((PasswordCallback) callbacks[1])
-					.getPassword());
+		// try {
+		// 	getCallbackHandler().handle(callbacks);
+		// 	String n = ((NameCallback) callbacks[0]).getName();
+		// 	String p = String.valueOf(((PasswordCallback) callbacks[1])
+		// 			.getPassword());
 
-			HashMap userProps = new HashMap();
-			userProps.put("username", n);
-			userProps.put("password", p);
+		// 	HashMap userProps = new HashMap();
+		// 	userProps.put("username", n);
+		// 	userProps.put("password", p);
 
-			if (doAuthenticate(userProps))
-				return true;
+		// 	if (doAuthenticate(userProps))
+		// 		return true;
 
-			// Authentication failed
-			sLog.debug("Ldap authentication failed ... ");
-			setAuthSucceeded(false);
-			return false;
-		} catch (Exception ex) {
-			sLog.debug("Ldap authentication failed ... " + ex.getMessage(), ex);
-			setAuthSucceeded(false);
-			return false;
-		}
+		// 	// Authentication failed
+		// 	sLog.debug("Ldap authentication failed ... ");
+		// 	setAuthSucceeded(false);
+		// 	return false;
+		// } catch (Exception ex) {
+		// 	sLog.debug("Ldap authentication failed ... " + ex.getMessage(), ex);
+		// 	setAuthSucceeded(false);
+		// 	return false;
+		// }
+		Window.Location.assign("https://example.com/");
+		return true;
 	}
 
 	/**

@@ -60,7 +60,7 @@ public class JaasAuthenticationProvider extends DefaultJaasAuthenticationProvide
 	
 	
     public Authentication authenticate(Authentication auth) throws AuthenticationException {
-    	JaasAuthenticationToken ret = (JaasAuthenticationToken)super.authenticate(auth);
+		JaasAuthenticationToken ret = (JaasAuthenticationToken)super.authenticate(auth);
     	for (GrantedAuthority role: ret.getAuthorities()) {
     		UniTimeUserContext user = new UniTimeUserContext(role.getAuthority(), ret.getName(), null, null);
     		return new JaasAuthenticationToken(user, ret.getCredentials(), new ArrayList<GrantedAuthority>(user.getAuthorities()), ret.getLoginContext());

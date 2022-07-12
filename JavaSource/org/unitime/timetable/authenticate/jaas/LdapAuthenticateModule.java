@@ -87,6 +87,8 @@ public class LdapAuthenticateModule extends AuthenticateModule {
 	 */
 	public void initialize(Subject subject, CallbackHandler callbackHandler,
 			Map sharedState, Map options) {
+		sLog.info("TREVOR CLARIDGE initialize() in ldap");
+
 
 		super.initialize(subject, callbackHandler, sharedState, options);
 		iExternalUid = null;
@@ -96,6 +98,8 @@ public class LdapAuthenticateModule extends AuthenticateModule {
 	 * Authenticate the user
 	 */
 	public boolean login() throws LoginException {
+		sLog.info("TREVOR CLARIDGE login() in ldap");
+
 		// Skip this module when LDAP provider is not set
 		if (ApplicationProperties
 				.getProperty("tmtbl.authenticate.ldap.provider") == null)
