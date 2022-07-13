@@ -198,6 +198,7 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 		header.add(new UniTimeTableHeader(MESSAGES.colCourse()));
 		header.add(new UniTimeTableHeader(MESSAGES.colTitle()));
 		header.add(new UniTimeTableHeader(MESSAGES.colCredit()));
+		header.add(new UniTimeTableHeader(MESSAGES.colWaitListSwapWithCourseOffering()));
 		header.add(new UniTimeTableHeader(MESSAGES.colWaitListPosition()));
 		header.add(new UniTimeTableHeader(MESSAGES.colRequirements()));
 		header.add(new UniTimeTableHeader(MESSAGES.colWaitListErrors()));
@@ -385,7 +386,7 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 	protected void fillInAdvisorRequests() {
 		ArrayList<WebTable.Row> rows = new ArrayList<WebTable.Row>();
 		boolean hasPref = false;
-		boolean hasCrit = false;
+		boolean hasCrit = false, hasImp = false, hasVital = false;
 		boolean hasWL = false;
 		boolean hasChanges = false;
 		iTabs.getTabBar().setTabEnabled(0, iAssignment.hasAdvisorRequest());
@@ -394,7 +395,9 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 			int priority = 1;
 			for (Request request: iAssignment.getAdvisorRequest().getCourses()) {
 				if (request.hasRequestedCourse()) {
-					if (request.isCritical() || request.isImportant()) hasCrit = true;
+					if (request.isCritical()) hasCrit = true;
+					if (request.isImportant()) hasImp = true;
+					if (request.isVital()) hasVital = true;
 					if (iAssignment.getAdvisorRequest().getWaitListMode() == WaitListMode.WaitList) {
 						if (request.isWaitList()) hasWL = true;
 					} else {
@@ -438,7 +441,8 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 									credit,
 									new WebTable.Cell(ToolBox.toString(prefs), true),
 									request.isCritical() ? new WebTable.IconCell(RESOURCES.requestsCritical(), MESSAGES.descriptionRequestCritical(), "") :
-									request.isImportant() ? new WebTable.IconCell(RESOURCES.requestsImportant(), MESSAGES.descriptionRequestImportant(), "") : new WebTable.Cell(""),
+									request.isImportant() ? new WebTable.IconCell(RESOURCES.requestsImportant(), MESSAGES.descriptionRequestImportant(), "") :
+									request.isVital() ? new WebTable.IconCell(RESOURCES.requestsVital(), MESSAGES.descriptionRequestVital(), "") : new WebTable.Cell(""),
 									(iAssignment.getAdvisorRequest().getWaitListMode() == WaitListMode.WaitList
 										? (request.isWaitList() ? new WebTable.IconCell(RESOURCES.requestsWaitList(), MESSAGES.descriptionRequestWaitListed(), "") : new WebTable.Cell(""))
 										: (request.isNoSub() ? new WebTable.IconCell(RESOURCES.requestsWaitList(), MESSAGES.descriptionRequestNoSubs(), "") : new WebTable.Cell(""))),
@@ -634,14 +638,23 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 		
 		iAdvReqs.setData(rowArray);
 		iAdvReqs.setColumnVisible(4, hasPref);
-		iAdvReqs.setColumnVisible(5, hasCrit);
+		iAdvReqs.setColumnVisible(5, (hasCrit || hasImp || hasVital) && CONSTANTS.advisorCourseRequestsShowCritical());
+		if (hasCrit && !hasImp && !hasVital)
+			iAdvReqs.getTable().setHTML(0, 5, MESSAGES.opSetCritical());
+		else if (!hasCrit && hasImp && !hasVital)
+			iAdvReqs.getTable().setHTML(0, 5, MESSAGES.opSetImportant());
+		else if (!hasCrit && !hasImp && hasVital)
+			iAdvReqs.getTable().setHTML(0, 5, MESSAGES.opSetVital());
+		else
+			iAdvReqs.getTable().setHTML(0, 5, MESSAGES.colCritical());
 		iAdvReqs.setColumnVisible(6, hasWL);
 		iAdvReqs.setColumnVisible(8, hasChanges);
 	}
 	
 	protected void fillInRequests() {
 		ArrayList<WebTable.Row> rows = new ArrayList<WebTable.Row>();
-		boolean hasPref = false, hasWarn = false, hasWait = false, hasCrit = iAssignment.isCanSetCriticalOverrides();
+		boolean hasPref = false, hasWarn = false, hasWait = false;
+		boolean hasCrit = false, hasImp = false, hasVital = false;
 		NumberFormat df = NumberFormat.getFormat("0.#");
 		if (iAssignment.hasRequest()) {
 			setWaitListMode(iAssignment.getRequest().getWaitListMode(), false, true);
@@ -656,7 +669,9 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 				} else {
 					if (request.isNoSub()) hasWait = true;
 				}
-				if (request.isCritical() || request.isImportant()) hasCrit = true;
+				if (request.isCritical()) hasCrit = true;
+				if (request.isImportant()) hasImp = true;
+				if (request.isVital()) hasVital = true;
 				for (RequestedCourse rc: request.getRequestedCourse()) {
 					if (rc.isCourse()) {
 						ImageResource icon = null; String iconText = null;
@@ -736,8 +751,9 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 								new WebTable.Cell(ToolBox.toString(prefs)),
 								new WebTable.NoteCell(note, noteTitle),
 								(icon == null ? new WebTable.Cell(status) : new WebTable.IconCell(icon, iconText, status)),
-								(first && iAssignment.isCanSetCriticalOverrides() ? new CriticalCell(request) : first && request.isCritical() ? new WebTable.IconCell(RESOURCES.requestsCritical(), MESSAGES.descriptionRequestCritical(), "") :
-									first && request.isImportant() ? new WebTable.IconCell(RESOURCES.requestsImportant(), MESSAGES.descriptionRequestImportant(), "") : new WebTable.Cell("")),
+								(first && iAssignment.isCanSetCriticalOverrides() ? new CriticalCell(request) : first && request.isCritical() ? new WebTable.IconCell(RESOURCES.requestsCritical(), MESSAGES.descriptionRequestCritical(), MESSAGES.opSetCritical()) :
+									first && request.isImportant() ? new WebTable.IconCell(RESOURCES.requestsImportant(), MESSAGES.descriptionRequestImportant(), MESSAGES.opSetImportant()) :
+									first && request.isVital() ? new WebTable.IconCell(RESOURCES.requestsVital(), MESSAGES.descriptionRequestVital(), MESSAGES.opSetVital()) : new WebTable.Cell("")),
 								(iAssignment.getRequest().getWaitListMode() == WaitListMode.WaitList
 									? (first && request.isWaitList() ? new WebTable.IconCell(RESOURCES.requestsWaitList(), MESSAGES.descriptionRequestWaitListed(), (request.hasWaitListedTimeStamp() ? sWLF.format(request.getWaitListedTimeStamp()) : "")) : new WebTable.Cell(""))
 									: (first && request.isNoSub() ? new WebTable.IconCell(RESOURCES.requestsWaitList(), MESSAGES.descriptionRequestNoSubs(), "") : new WebTable.Cell(""))),
@@ -779,7 +795,9 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 				if (!request.hasRequestedCourse()) continue;
 				boolean first = true;
 				if (request.isWaitList()) hasWait = true;
-				if (request.isCritical() || request.isImportant()) hasCrit = true;
+				if (request.isCritical()) hasCrit = true;
+				if (request.isImportant()) hasImp = true;
+				if (request.isVital()) hasVital = true;
 				for (RequestedCourse rc: request.getRequestedCourse()) {
 					if (rc.isCourse()) {
 						ImageResource icon = null; String iconText = null;
@@ -859,8 +877,9 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 								new WebTable.Cell(ToolBox.toString(prefs)),
 								new WebTable.NoteCell(note, noteTitle),
 								(icon == null ? new WebTable.Cell(status) : new WebTable.IconCell(icon, iconText, status)),
-								(first && iAssignment.isCanSetCriticalOverrides() ? new CriticalCell(request) : first && request.isCritical() ? new WebTable.IconCell(RESOURCES.requestsCritical(), MESSAGES.descriptionRequestCritical(), "") :
-									first && request.isImportant() ? new WebTable.IconCell(RESOURCES.requestsImportant(), MESSAGES.descriptionRequestImportant(), "") : new WebTable.Cell("")),
+								(first && iAssignment.isCanSetCriticalOverrides() ? new CriticalCell(request) : first && request.isCritical() ? new WebTable.IconCell(RESOURCES.requestsCritical(), MESSAGES.descriptionRequestCritical(), MESSAGES.opSetCritical()) :
+									first && request.isImportant() ? new WebTable.IconCell(RESOURCES.requestsImportant(), MESSAGES.descriptionRequestImportant(), MESSAGES.opSetImportant()) :
+									first && request.isVital() ? new WebTable.IconCell(RESOURCES.requestsVital(), MESSAGES.descriptionRequestVital(), MESSAGES.opSetVital()) : new WebTable.Cell("")),
 								(first && request.isWaitList() ? new WebTable.IconCell(RESOURCES.requestsWaitList(), MESSAGES.descriptionRequestWaitListed(), (request.hasWaitListedTimeStamp() ? sWLF.format(request.getWaitListedTimeStamp()) : "")) : new WebTable.Cell("")),
 								new WebTable.Cell(first && request.hasTimeStamp() ? sDF.format(request.getTimeStamp()) : "")
 								);
@@ -983,7 +1002,15 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 		iRequests.setData(rowArray);
 		iRequests.setColumnVisible(4, hasPref);
 		iRequests.setColumnVisible(5, hasWarn);
-		iRequests.setColumnVisible(7, hasCrit);
+		iRequests.setColumnVisible(7, hasCrit || hasImp || hasVital || iAssignment.isCanSetCriticalOverrides());
+		if (hasCrit && !hasImp && !hasVital)
+			iRequests.getTable().setHTML(0, 7, MESSAGES.opSetCritical());
+		else if (!hasCrit && hasImp && !hasVital)
+			iRequests.getTable().setHTML(0, 7, MESSAGES.opSetImportant());
+		else if (!hasCrit && !hasImp && hasVital)
+			iRequests.getTable().setHTML(0, 7, MESSAGES.opSetVital());
+		else
+			iRequests.getTable().setHTML(0, 7, MESSAGES.colCritical());
 		iRequests.setColumnVisible(8, hasWait);
 	}
 	
@@ -1278,17 +1305,20 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 	
 	public void fillInWaitLists() {
 		iWaitLists.clearTable(1);
-		if (iAssignment != null && iAssignment.hasRequest()) {
+		if (iAssignment != null && iAssignment.hasRequest() && iAssignment.getRequest().getWaitListMode() == WaitListMode.WaitList) {
 			NumberFormat df = NumberFormat.getFormat("0.#");
+			boolean hasSwap = false;
 			boolean hasPosition = false;
 			boolean hasPrefs = false;
 			request: for (Request request: iAssignment.getRequest().getCourses()) {
 				if (request.isWaitList() && request.hasRequestedCourse()) {
 					for (RequestedCourse rc: request.getRequestedCourse())
-						if (rc.getStatus() == RequestedCourseStatus.ENROLLED) continue request;
+						if (rc.getStatus() == RequestedCourseStatus.ENROLLED &&
+							(request.getWaitListSwapWithCourseOfferingId() == null || !request.getWaitListSwapWithCourseOfferingId().equals(rc.getCourseId())))
+							continue request;
 					boolean firstLine = true;
 					for (RequestedCourse rc: request.getRequestedCourse()) {
-						if (rc.hasCourseId() && rc.isCanWaitList() && rc.getStatus() != RequestedCourseStatus.ENROLLED) {
+						if (rc.hasCourseId() && rc.isCanWaitList()) {
 							P p = new P("icons");
 							String style = "pending";
 							if (rc.getStatus() != null) {
@@ -1314,7 +1344,12 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 									p.add(new Icon(RESOURCES.requestNeeded(), MESSAGES.reqStatusNeeded()));
 									style = "needed";
 									break;
+								case WAITLIST_INACTIVE:
+									p.add(new Icon(RESOURCES.waitListNotActive(), MESSAGES.waitListInactive(rc.getCourseName())));
+									style = "cancelled";
+									break;
 								case SAVED:
+								case ENROLLED:
 									p.add(new Icon(RESOURCES.requestsWaitList(), MESSAGES.descriptionRequestWaitListed()));
 									style = "saved";
 									break;
@@ -1331,6 +1366,21 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 							row.add(new Label(rc.getCourseName()));
 							row.add(new Label(rc.hasCourseTitle() ? rc.getCourseTitle() : ""));
 							row.add(new Label(rc.hasCredit() ? (rc.getCreditMin().equals(rc.getCreditMax()) ? df.format(rc.getCreditMin()) : df.format(rc.getCreditMin()) + " - " + df.format(rc.getCreditMax())) : ""));
+							
+							if (firstLine && request.getWaitListSwapWithCourseOfferingId() != null && iAssignment != null) {
+								Label swap = null;
+								for (ClassAssignmentInterface.CourseAssignment course: iAssignment.getCourseAssignments()) {
+									if (request.getWaitListSwapWithCourseOfferingId().equals(course.getCourseId()) && !course.isTeachingAssignment() && course.isAssigned()) {
+										swap = new Label(course.getCourseName());
+										swap.setTitle(MESSAGES.conflictWaitListSwapWithNoCourseOffering(course.getCourseNameWithTitle()));
+										hasSwap = true;
+										break;
+									}
+								}
+								row.add(swap == null ? new Label("") : swap);
+							} else {
+								row.add(new Label(""));	
+							}
 							
 							if (rc.hasWaitListPosition() && rc.getStatus() != RequestedCourseStatus.NEW_REQUEST && rc.getStatus() != RequestedCourseStatus.OVERRIDE_NEEDED) {
 								hasPosition = true;
@@ -1378,7 +1428,8 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 								note = (note == null ? "" : note + "<br>") + "<span class='note'>" + rc.getStatusNote() + "</span>";
 							}
 							for (ClassAssignmentInterface.CourseAssignment course: iAssignment.getCourseAssignments()) {
-								if (!course.isAssigned() && rc.getCourseId().equals(course.getCourseId()) && course.hasEnrollmentMessage()) {
+								if (!course.isAssigned() && rc.getCourseId().equals(course.getCourseId()) && course.hasEnrollmentMessage() &&
+										!iAssignment.getRequest().hasConfirmations(rc.getCourseId(), "NO_ALT", "CREDIT")) {
 									note = (note == null ? "" : note + "<br>") + "<span class='error'>" + course.getEnrollmentMessage() + "</span>";		
 								}
 							}
@@ -1395,7 +1446,7 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 					}
 				}
 			}
-			if (iAssignment.getRequest().hasMaxCreditOverride()) {
+			if (iAssignment.getRequest().hasMaxCreditOverride() && iAssignment.getRequest().getRequestId() != null) {
 				P p = new P("icons");
 				String style = "pending";
 				if (iAssignment.getRequest().getMaxCreditOverrideStatus() != null) {
@@ -1441,6 +1492,7 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 				row.add(new Label(df.format(iAssignment.getRequest().getMaxCreditOverride())));
 				row.add(new Label(""));
 				row.add(new Label(""));
+				row.add(new Label(""));
 				String note = null;
 				if (iAssignment.getRequest().hasCreditWarning())
 					note = "<span class='"+style+"'>" + iAssignment.getRequest().getCreditWarning() + "</span>";
@@ -1456,8 +1508,9 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 						iWaitLists.getCellFormatter().addStyleName(idx, c, "top-border-dashed");								
 				}
 			}
-			iWaitLists.setColumnVisible(5, hasPosition);
-			iWaitLists.setColumnVisible(6, hasPrefs);
+			iWaitLists.setColumnVisible(5, hasSwap);
+			iWaitLists.setColumnVisible(6, hasPosition);
+			iWaitLists.setColumnVisible(7, hasPrefs);
 		}
 		
 		iTabs.getTabBar().setTabEnabled(5, iWaitLists.getRowCount() > 1);
@@ -1532,12 +1585,16 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 		private Request iRequest;
 		
 		CriticalCell(Request request) {
-			super(request.isCritical() ? RESOURCES.requestsCritical() : request.isImportant() ? RESOURCES.requestsImportant() : RESOURCES.requestsNotCritical(), "", null);
-			getIcon().setTitle(request.isCritical() ? MESSAGES.descriptionRequestCritical() : request.isImportant() ? MESSAGES.descriptionRequestImportant() : MESSAGES.descriptionRequestNotCritical());
-			getIcon().setAltText(request.isCritical() ? MESSAGES.descriptionRequestCritical() : request.isImportant() ? MESSAGES.descriptionRequestImportant() : MESSAGES.descriptionRequestNotCritical());
+			super(
+				request.isCritical() ? RESOURCES.requestsCritical() : request.isImportant() ? RESOURCES.requestsImportant() : request.isVital() ? RESOURCES.requestsVital() : RESOURCES.requestsNotCritical(),
+				null,
+				request.isCritical() ? MESSAGES.opSetCritical() : request.isImportant() ? MESSAGES.opSetImportant() : request.isVital() ? MESSAGES.opSetVital() : MESSAGES.opSetNotCritical()
+				);
+			getIcon().setAltText(request.isCritical() ? MESSAGES.descriptionRequestCritical() : request.isImportant() ? MESSAGES.descriptionRequestImportant() : request.isVital() ? MESSAGES.descriptionRequestVital() : MESSAGES.descriptionRequestNotCritical());
+			getIcon().setTitle(request.isCritical() ? MESSAGES.descriptionRequestCritical() : request.isImportant() ? MESSAGES.descriptionRequestImportant() : request.isVital() ? MESSAGES.descriptionRequestVital() : MESSAGES.descriptionRequestNotCritical());
 			iRequest = request;
 			getIcon().getElement().getStyle().setCursor(Cursor.POINTER);
-			getIcon().addClickHandler(new ClickHandler() {
+			ClickHandler ch = new ClickHandler() {
 				@Override
 				public void onClick(ClickEvent event) {
 					final PopupPanel popup = new PopupPanel(true);
@@ -1552,6 +1609,15 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 						}
 					});
 					menu.addItem(item1);
+					
+					MenuItem item1b = new MenuItem(MESSAGES.opSetVital(), true, new Command() {
+						@Override
+						public void execute() {
+							popup.hide();
+							change(3);
+						}
+					});
+					menu.addItem(item1b);
 					
 					MenuItem item2 = new MenuItem(MESSAGES.opSetImportant(), true, new Command() {
 						@Override
@@ -1585,7 +1651,9 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 					popup.showRelativeTo((Widget)event.getSource());
 					((MenuBar)popup.getWidget()).focus();
 				}
-			});
+			};
+			getIcon().addClickHandler(ch);
+			getLabel().addClickHandler(ch);
 		}
 		
 		void change(Integer value) {
@@ -1602,14 +1670,22 @@ public class StudentSchedule extends Composite implements TakesValue<ClassAssign
 						getIcon().setResource(RESOURCES.requestsCritical());
 						getIcon().setTitle(MESSAGES.descriptionRequestCritical());
 						getIcon().setAltText(MESSAGES.descriptionRequestCritical());
+						getLabel().setText(MESSAGES.opSetCritical());
 					} else if (result == 2) {
 						getIcon().setResource(RESOURCES.requestsImportant());
 						getIcon().setTitle(MESSAGES.descriptionRequestImportant());
 						getIcon().setAltText(MESSAGES.descriptionRequestImportant());
+						getLabel().setText(MESSAGES.opSetImportant());
+					} else if (result == 3) {
+						getIcon().setResource(RESOURCES.requestsVital());
+						getIcon().setTitle(MESSAGES.descriptionRequestVital());
+						getIcon().setAltText(MESSAGES.descriptionRequestVital());
+						getLabel().setText(MESSAGES.opSetVital());
 					} else {
 						getIcon().setResource(RESOURCES.requestsNotCritical());
 						getIcon().setTitle(MESSAGES.descriptionRequestNotCritical());
 						getIcon().setAltText(MESSAGES.descriptionRequestNotCritical());
+						getLabel().setText(MESSAGES.opSetNotCritical());
 					}
 				}
 			});

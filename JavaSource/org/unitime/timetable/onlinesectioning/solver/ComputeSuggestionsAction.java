@@ -132,6 +132,7 @@ public class ComputeSuggestionsAction extends FindAssignmentAction {
 			overExpected = new MinimizeConflicts(server.getConfig(), overExpected);
 		}
 		OnlineSectioningModel model = new OnlineSectioningModel(server.getConfig(), overExpected);
+		model.setDayOfWeekOffset(server.getAcademicSession().getDayOfWeekOffset());
 		Assignment<Request, Enrollment> assignment = new AssignmentMap<Request, Enrollment>();
 		boolean linkedClassesMustBeUsed = server.getConfig().getPropertyBoolean("LinkedClasses.mustBeUsed", false);
 
@@ -169,6 +170,10 @@ public class ComputeSuggestionsAction extends FindAssignmentAction {
 				student.setAllowDisabled(original.isAllowDisabled());
 				if (server instanceof StudentSolver)
 					student.setMaxCredit(original.getMaxCredit());
+				student.setClassFirstDate(original.getClassStartDate());
+				student.setClassLastDate(original.getClassEndDate());
+				student.setBackToBackPreference(original.getBackToBackPreference());
+				student.setModalityPreference(original.getModalityPreference());
 				action.getStudentBuilder().setUniqueId(original.getStudentId()).setExternalId(original.getExternalId()).setName(original.getName());
 				enrolled = new HashSet<IdPair>();
 				for (XRequest r: original.getRequests()) {
@@ -194,10 +199,10 @@ public class ComputeSuggestionsAction extends FindAssignmentAction {
 			Set<XDistribution> distributions = new HashSet<XDistribution>();
 			if (getAssignment() != null) getRequest().moveActiveSubstitutionsUp();
 			for (CourseRequestInterface.Request c: getRequest().getCourses())
-				addRequest(server, model, assignment, student, original, c, false, true, classTable, distributions, getAssignment() != null, getAssignment() != null, checkDeadlines, currentDateIndex, onlineOnlyFilter);
+				addRequest(server, model, assignment, student, original, c, false, true, classTable, distributions, getAssignment() != null, getAssignment() != null, checkDeadlines, currentDateIndex, onlineOnlyFilter, isCanRequirePreferences());
 			if (student.getRequests().isEmpty()) throw new SectioningException(MSG.exceptionNoCourse());
 			for (CourseRequestInterface.Request c: getRequest().getAlternatives())
-				addRequest(server, model, assignment, student, original, c, true, true, classTable, distributions, getAssignment() != null, getAssignment() != null, checkDeadlines, currentDateIndex, onlineOnlyFilter);
+				addRequest(server, model, assignment, student, original, c, true, true, classTable, distributions, getAssignment() != null, getAssignment() != null, checkDeadlines, currentDateIndex, onlineOnlyFilter, isCanRequirePreferences());
 			if (helper.isAlternativeCourseEnabled()) {
 				for (Request r: student.getRequests()) {
 					if (r.isAlternative() || !(r instanceof CourseRequest)) continue;

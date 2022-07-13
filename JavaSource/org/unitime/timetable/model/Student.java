@@ -29,9 +29,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.cpsolver.studentsct.model.Student.BackToBackPreference;
+import org.cpsolver.studentsct.model.Student.ModalityPreference;
 import org.hibernate.Query;
 import org.unitime.timetable.defaults.ApplicationProperty;
 import org.unitime.timetable.gwt.shared.OnlineSectioningInterface.WaitListMode;
+import org.unitime.timetable.gwt.shared.StudentSchedulingPreferencesInterface.ClassModality;
+import org.unitime.timetable.gwt.shared.StudentSchedulingPreferencesInterface.ScheduleGaps;
 import org.unitime.timetable.model.CourseRequest.CourseRequestOverrideIntent;
 import org.unitime.timetable.model.CourseRequest.CourseRequestOverrideStatus;
 import org.unitime.timetable.model.StudentSectioningStatus.Option;
@@ -407,6 +411,13 @@ public class Student extends BaseStudent implements Comparable<Student>, NameInt
     	return null;
     }
     
+    public boolean isEnrolled(CourseOffering co) {
+    	if (co == null) return false;
+    	for (StudentClassEnrollment e: getClassEnrollments())
+    		if (e.getCourseOffering().equals(co)) return true;
+    	return false;
+    }
+    
     public WaitList addWaitList(CourseOffering co, WaitList.WaitListType type, boolean waitListed, String changedBy, Date timeStamp, org.hibernate.Session hibSession) {
     	if (ApplicationProperty.WaitListLogging.isFalse()) return null;
     	if (co == null) return null;
@@ -419,19 +430,24 @@ public class Student extends BaseStudent implements Comparable<Student>, NameInt
     		}
     	}
     	boolean lastWaitListed = (last == null ? false : last.isWaitListed());
-    	boolean lastEnrolled = (last == null ? false : last.getEnrolledCourse() != null);
-    	boolean enrolled = (cr == null ? null : cr.getCourseDemand().isEnrolled());
-    	if (lastWaitListed != waitListed || lastEnrolled != enrolled) {
+    	CourseOffering lastEnrolled = (last == null ? null : last.getEnrolledCourse());
+    	CourseOffering enrolled = (cr == null ? null : cr.getCourseDemand().getEnrolledCourse());
+    	if (enrolled != null && cr != null && enrolled.equals(cr.getCourseDemand().getWaitListSwapWithCourseOffering()) && !cr.isRequired()) 
+    		enrolled = null; // if section swap and the enrollment does not meet requirements -> not enrolled
+    	CourseOffering lastSwap = (last == null ? null : last.getSwapCourseOffering());
+    	CourseOffering swap = (cr == null ? null : cr.getCourseDemand().getWaitListSwapWithCourseOffering());
+    	if (lastWaitListed != waitListed || !(lastEnrolled == null ? enrolled == null : lastEnrolled.equals(enrolled)) || !(lastSwap == null ? swap == null : lastSwap.equals(swap))) {
     		WaitList wl = new WaitList();
     		wl.setChangedBy(changedBy);
     		wl.setCourseOffering(cr == null ? co : cr.getCourseDemand().getFirstChoiceCourseOffering());
-    		wl.setEnrolledCourse(enrolled ? co : null);
+    		wl.setEnrolledCourse(enrolled);
     		wl.setTimestamp(timeStamp);
     		wl.setWaitListType(type);
     		wl.setWaitListed(waitListed);
     		wl.setWaitListedTimeStamp(cr == null ? null : cr.getCourseDemand().getWaitlistedTimeStamp());
     		wl.setStudent(this);
     		wl.setCourseDemand(cr == null ? null : cr.getCourseDemand());
+    		wl.setSwapCourseOffering(cr == null ? null : cr.getCourseDemand().getWaitListSwapWithCourseOffering());
     		wl.fillInNotes();
     		addTowaitlists(wl);
     		if (hibSession != null) hibSession.save(wl);
@@ -455,6 +471,14 @@ public class Student extends BaseStudent implements Comparable<Student>, NameInt
 			WaitList wl = waitlists.remove(e.getCourseOffering());
 			if (wl != null && wl.isWaitListed()) {
 				// wait-list enrolled
+				if (e.getCourseOffering().equals(wl.getSwapCourseOffering())) { // is section swap
+					CourseRequest cr = getCourseRequest(e.getCourseOffering());
+					if (cr != null && !cr.isRequired()) {
+						// requirements not met -> put back (it is considered not enrolled)
+						waitlists.put(e.getCourseOffering(), wl);
+						continue;
+					}
+				}
 				wl = new WaitList();
 				wl.setChangedBy(changedBy);
 				wl.setTimestamp(timeStamp);
@@ -466,17 +490,19 @@ public class Student extends BaseStudent implements Comparable<Student>, NameInt
 				wl.setWaitListed(false);
 				wl.setStudent(this);
 				wl.setWaitListedTimeStamp(cr == null ? null : cr.getCourseDemand().getWaitlistedTimeStamp());
+				wl.setSwapCourseOffering(cr == null ? null : cr.getCourseDemand().getWaitListSwapWithCourseOffering());
 				wl.fillInNotes();
 				addTowaitlists(wl);
 				if (hibSession != null) hibSession.save(wl);
 			}
 		}
 		for (CourseDemand cd: getCourseDemands()) {
-			if (cd.isWaitlist() && !cd.isEnrolled()) {
+			if (cd.isWaitlist() && !cd.isEnrolled(true)) {
 				CourseOffering co = cd.getFirstChoiceCourseOffering();
 				if (co != null) {
 					WaitList old = waitlists.remove(co);
-					if (old == null || !old.isWaitListed() || !WaitList.computeRequest(cd).equals(old.getRequest())) {
+					if (old == null || !old.isWaitListed() || !WaitList.computeRequest(cd).equals(old.getRequest()) || 
+							!(old.getSwapCourseOffering() == null ? cd.getWaitListSwapWithCourseOffering() == null : old.getSwapCourseOffering().equals(cd.getWaitListSwapWithCourseOffering()))) {
 						// new wait-lists
 						WaitList wl = new WaitList();
 						wl.setChangedBy(changedBy);
@@ -487,6 +513,7 @@ public class Student extends BaseStudent implements Comparable<Student>, NameInt
 						wl.setWaitListed(true);
 						wl.setStudent(this);
 						wl.setWaitListedTimeStamp(cd.getWaitlistedTimeStamp());
+						wl.setSwapCourseOffering(cd.getWaitListSwapWithCourseOffering());
 						wl.fillInNotes();
 						addTowaitlists(wl);
 						if (hibSession != null) hibSession.save(wl);
@@ -509,10 +536,48 @@ public class Student extends BaseStudent implements Comparable<Student>, NameInt
 				wl.setWaitListed(false);
 				wl.setStudent(this);
 				wl.setWaitListedTimeStamp(old.getWaitListedTimeStamp());
+				wl.setSwapCourseOffering(old.getSwapCourseOffering());
 				wl.fillInNotes();
 				addTowaitlists(wl);
 				if (hibSession != null) hibSession.save(wl);
 			}
 		}
+    }
+    
+    public ClassModality getPreferredClassModality() {
+    	if (getSchedulePreference() == null) return ClassModality.NoPreference;
+    	return ClassModality.values()[getSchedulePreference()];
+    }
+    public void setPreferredClassModality(ClassModality modality) {
+    	if (modality == null)
+    		setSchedulePreference(null);
+    	else
+    		setSchedulePreference(modality.ordinal());
+    }
+    public ModalityPreference getModalityPreference() {
+    	switch(getPreferredClassModality()) {
+    	case DiscouragedOnline: return ModalityPreference.ONILNE_DISCOURAGED;
+    	case PreferredOnline: return ModalityPreference.ONLINE_PREFERRED;
+    	case RequiredOnline: return ModalityPreference.ONLINE_REQUIRED;
+    	default: return ModalityPreference.NO_PREFERENCE;
+    	}
+    }
+    
+    public ScheduleGaps getPreferredScheduleGaps() {
+    	if (getFreeTimeCategory() == null) return ScheduleGaps.NoPreference;
+    	return ScheduleGaps.values()[getFreeTimeCategory()];
+    }
+    public void setPreferredScheduleGaps(ScheduleGaps gaps) {
+    	if (gaps == null)
+    		setFreeTimeCategory(null);
+    	else
+    		setFreeTimeCategory(gaps.ordinal());
+    }
+    public BackToBackPreference getBackToBackPreference() {
+    	switch (getPreferredScheduleGaps()) {
+    	case DiscourageBackToBack: return BackToBackPreference.BTB_DISCOURAGED;
+    	case PreferBackToBack: return BackToBackPreference.BTB_PREFERRED;
+    	default: return BackToBackPreference.NO_PREFERENCE;
+    	}
     }
 }

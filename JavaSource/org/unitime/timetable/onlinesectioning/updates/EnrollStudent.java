@@ -263,6 +263,8 @@ public class EnrollStudent implements OnlineSectioningAction<ClassAssignmentInte
 								hasWaitListedCourses = true;
 								break;
 							}
+					if (student.getOverrideExternalId() != null && student.getMaxCreditOverrideIntent() == CourseRequestOverrideIntent.WAITLIST && student.getMaxCreditOverrideStatus() == CourseRequestOverrideStatus.PENDING)
+						hasWaitList = true; // may need to cancel the pending max credit override
 				}
 				
 				if (CustomStudentEnrollmentHolder.hasProvider()) {
@@ -371,6 +373,11 @@ public class EnrollStudent implements OnlineSectioningAction<ClassAssignmentInte
 					if (Boolean.TRUE.equals(cd.isWaitlist()) || r.isWaitList()) hasWaitList = true;
 					if (r.isWaitList() && !Boolean.TRUE.equals(cd.getWaitlist()))
 						cd.setWaitlistedTimeStamp(ts);
+					if (r.isWaitList()) {
+						cd.setWaitListSwapWithCourseOffering(r.getWaitListSwapWithCourseOfferingId() == null ? null : CourseOfferingDAO.getInstance().get(r.getWaitListSwapWithCourseOfferingId(), helper.getHibSession()));
+					} else {
+						cd.setWaitListSwapWithCourseOffering(null);
+					}
 					cd.setWaitlist(r.isWaitList());
 					cd.setNoSub(r.isNoSub());
 					if (checkCritical) cd.setCritical(isCritical(courses, cc));
@@ -530,6 +537,11 @@ public class EnrollStudent implements OnlineSectioningAction<ClassAssignmentInte
 					if (Boolean.TRUE.equals(cd.isWaitlist()) || r.isWaitList()) hasWaitList = true;
 					if (r.isWaitList() && !Boolean.TRUE.equals(cd.getWaitlist()))
 						cd.setWaitlistedTimeStamp(ts);
+					if (r.isWaitList()) {
+						cd.setWaitListSwapWithCourseOffering(r.getWaitListSwapWithCourseOfferingId() == null ? null : CourseOfferingDAO.getInstance().get(r.getWaitListSwapWithCourseOfferingId(), helper.getHibSession()));
+					} else {
+						cd.setWaitListSwapWithCourseOffering(null);
+					}
 					cd.setWaitlist(r.isWaitList());
 					cd.setNoSub(r.isNoSub());
 					cd.setCritical(0);

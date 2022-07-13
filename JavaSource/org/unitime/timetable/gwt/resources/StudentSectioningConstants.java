@@ -185,6 +185,9 @@ public interface StudentSectioningConstants extends Constants {
 		"No-Substitutes",
 		"Assigned No-Subs",
 		"Not Assigned No-Subs",
+		"Vital",
+		"Assigned Vital",
+		"Not Assigned Vital",
 	})
 	String[] assignmentType();
 	
@@ -252,4 +255,8 @@ public interface StudentSectioningConstants extends Constants {
 	@DefaultIntValue(10)
 	@DoNotTranslate
 	int degreePlanMaxAlternatives();
+	
+	@DefaultBooleanValue(true)
+	@DoNotTranslate
+	boolean advisorCourseRequestsShowCritical();
 }

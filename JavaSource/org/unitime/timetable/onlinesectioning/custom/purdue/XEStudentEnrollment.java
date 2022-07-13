@@ -51,7 +51,6 @@ import org.unitime.timetable.gwt.shared.OnlineSectioningInterface.GradeMode;
 import org.unitime.timetable.gwt.shared.OnlineSectioningInterface.GradeModes;
 import org.unitime.timetable.gwt.shared.OnlineSectioningInterface.EligibilityCheck.EligibilityFlag;
 import org.unitime.timetable.gwt.shared.SectioningException;
-import org.unitime.timetable.model.Student;
 import org.unitime.timetable.gwt.shared.ClassAssignmentInterface.ErrorMessage;
 import org.unitime.timetable.onlinesectioning.AcademicSessionInfo;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
@@ -1167,7 +1166,6 @@ public class XEStudentEnrollment implements StudentEnrollmentProvider {
 			XStudent student = sectioningRequest.getStudent();
 			XCourseId course = sectioningRequest.getRequest().getCourseIdByOfferingId(sectioningRequest.getOffering().getOfferingId());
 			
-			// Remove sections that are to be kept (they are included in both enrollments)
 			Set<String> idsToAdd = new TreeSet<String>(), idsToDrop = new TreeSet<String>();
 			if (sectioningRequest.getLastEnrollment() != null)
 				for (XSection section: sectioningRequest.getOldOffering().getSections(sectioningRequest.getLastEnrollment()))
@@ -1176,9 +1174,19 @@ public class XEStudentEnrollment implements StudentEnrollmentProvider {
 				for (XSection section: sectioningRequest.getOffering().getSections(enrollment))
 					idsToAdd.add(section.getExternalId(course.getCourseId()));
 			}
+			
+			XEnrollment dropEnrollment = sectioningRequest.getDropEnrollment();
+			if (dropEnrollment != null) {
+				XOffering dropOffering = server.getOffering(dropEnrollment.getOfferingId());
+				if (dropOffering != null)
+					for (XSection section: dropOffering.getSections(dropEnrollment))
+						idsToDrop.add(section.getExternalId(dropEnrollment.getCourseId()));		
+			}
+
+			// Remove sections that are to be kept (they are included in both enrollments)
 			for (Iterator<String> i = idsToDrop.iterator(); i.hasNext(); )
 				if (idsToAdd.remove(i.next())) i.remove();
-			
+
 			// Return the new enrollment when there is no change detected
 			if (idsToAdd.isEmpty() && idsToDrop.isEmpty())
 				return enrollment;

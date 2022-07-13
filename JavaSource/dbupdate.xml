@@ -14450,4 +14450,46 @@
 			references %SCHEMA%.department (uniqueid) on delete set null
 		</pgsql>
 	</update>
+	<update version="249" date="3-Feb-2022" comment="Waitlist course swap">
+		<plsql>alter table %SCHEMA%.course_demand add wl_course_swap_id number(20,0)</plsql>
+	    <mysql>alter table %SCHEMA%.course_demand add wl_course_swap_id decimal(20,0)</mysql>
+	    <pgsql>alter table %SCHEMA%.course_demand add wl_course_swap_id bigint</pgsql>
+	    <sql>
+			alter table %SCHEMA%.course_demand add constraint fk_course_demand_course_swap foreign key (wl_course_swap_id)
+			references %SCHEMA%.course_offering (uniqueid) on delete set null
+		</sql>
+	</update>
+	<update version="250" date="16-Mar-2022" comment="Student Scheduling Preferences">
+		<plsql>alter table %SCHEMA%.student add class_start date</plsql>
+		<plsql>alter table %SCHEMA%.student add class_end date</plsql>
+		<mysql>alter table %SCHEMA%.student add class_start date null</mysql>
+		<mysql>alter table %SCHEMA%.student add class_end date null</mysql>
+		<pgsql>alter table %SCHEMA%.student add class_start date</pgsql>
+		<pgsql>alter table %SCHEMA%.student add class_end date</pgsql>
+	</update>
+	<update version="251" date="26-Apr-2022" comment="Waitlist log course swap">
+		<plsql>alter table %SCHEMA%.waitlist add swap_course_id number(20,0)</plsql>
+	    <mysql>alter table %SCHEMA%.waitlist add swap_course_id decimal(20,0)</mysql>
+	    <pgsql>alter table %SCHEMA%.waitlist add swap_course_id bigint</pgsql>
+	    <sql>
+			alter table %SCHEMA%.waitlist add constraint fk_waitlist_swap_course foreign key (swap_course_id)
+			references %SCHEMA%.course_offering (uniqueid) on delete set null
+		</sql>
+	</update>
+	<update version="252" date="26-May-2022" comment="Waitlist indexes">
+		<plsql onFail="next">create index %SCHEMA%.idx_course_demand_course_swap on %SCHEMA%.course_demand(wl_course_swap_id)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.idx_sect_pref_im on %SCHEMA%.sect_pref(instr_mthd_id)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.idx_sect_pref_class on %SCHEMA%.sect_pref(class_id)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.idx_sect_pref_request on %SCHEMA%.sect_pref(request_id)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.idx_waitlist_course_demand on %SCHEMA%.waitlist(demand_id)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.idx_waitlist_enrolled_course on %SCHEMA%.waitlist(enrolled_course_id)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.idx_waitlist_swap_course on %SCHEMA%.waitlist(swap_course_id)</plsql>
+		<pgsql onFail="next">create index idx_course_demand_course_swap ON %SCHEMA%.course_demand USING btree (wl_course_swap_id)</pgsql>
+		<pgsql onFail="next">create index idx_sect_pref_im ON %SCHEMA%.sect_pref USING btree (instr_mthd_id)</pgsql>
+		<pgsql onFail="next">create index idx_sect_pref_class ON %SCHEMA%.sect_pref USING btree (class_id)</pgsql>
+		<pgsql onFail="next">create index idx_sect_pref_request ON %SCHEMA%.sect_pref USING btree (request_id)</pgsql>
+		<pgsql onFail="next">create index idx_waitlist_course_demand ON %SCHEMA%.waitlist USING btree (demand_id)</pgsql>
+		<pgsql onFail="next">create index idx_waitlist_enrolled_course ON %SCHEMA%.waitlist USING btree (enrolled_course_id)</pgsql>
+		<pgsql onFail="next">create index idx_waitlist_swap_course ON %SCHEMA%.waitlist USING btree (swap_course_id)</pgsql>
+	</update>
 </dbupdate>

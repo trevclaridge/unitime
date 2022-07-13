@@ -1206,6 +1206,7 @@ public enum ApplicationProperty {
 	
 	@Type(Class.class)
 	@Implements(CriticalCoursesProvider.class)
+	@DefaultValue("org.unitime.timetable.onlinesectioning.custom.DefaultCriticalCourses")
 	@Description("Customization: student critical courses provider (interface CriticalCoursesProvider, used by Course Requests and/or batch scheduling solver to identify critical courses)")
 	CustomizationCriticalCourses("unitime.custom.CriticalCoursesProvider"),
 	
@@ -2528,6 +2529,29 @@ public enum ApplicationProperty {
 	
 	@Type(Boolean.class)
 	@DefaultValue("true")
+	@Description("Online Student Scheduling: enable student scheduling preferences")
+	@Since(4.6)
+	OnlineSchedulingStudentPreferencesEnabled("unitime.enrollment.studentPrefs.enabled"),
+	
+	@Type(Boolean.class)
+	@DefaultValue("false")
+	@Description("Online Student Scheduling Preferences: allow selection of start and end dates (typically only enabled for Summer term)")
+	@Since(4.6)
+	OnlineSchedulingStudentPreferencesDatesAllowed("unitime.enrollment.studentPrefs.datesAllowed"),
+	
+	@Type(Boolean.class)
+	@Description("Online Student Scheduling Preferences: custom note to be shown on the dialog (may contain HTML elements)")
+	@Since(4.6)
+	OnlineSchedulingStudentPreferencesNote("unitime.enrollment.studentPrefs.customNote"),
+	
+	@Type(Boolean.class)
+	@DefaultValue("false")
+	@Description("Online Student Scheduling Preferences: allow require online (typically only enabled for Summer term)")
+	@Since(4.6)
+	OnlineSchedulingStudentPreferencesReqOnlineAllowed("unitime.enrollment.studentPrefs.reqOnlineAllowed"),
+	
+	@Type(Boolean.class)
+	@DefaultValue("true")
 	@Description("Student Solver Dashboard: allow Rearrange Schedule button)")
 	@Since(4.4)
 	SolverDashboardAllowScheduleReset("unitime.solverDashboard.allowScheduleReset"),
@@ -2862,6 +2886,18 @@ public enum ApplicationProperty {
 	@Since(4.5)
 	PopupMessageCourseRequestsPrepopulatedWithAdvisorRecommendations("unitime.acrf.showingRecommendationsPopup"),
 	
+	@Type(String.class)
+	@Description("Advisor Course Recommendations: show critical course check with the given course request preference level:\n"
+			+ "- Critical ... critical course check does show and have the Critical value\n"
+			+ "- Vital ... critical course check does show and have the Vital value\n"
+			+ "- Important ... critical course check does show and have the Important value\n"
+			+ "- None ... critical course check does not show / cannot be set by advisors"
+			)
+	@Since(4.7)
+	@DefaultValue("None")
+	@Values({"None, Critical, Vital, Important"})
+	AdvisorCourseRequestsAllowCritical("unitime.acrf.setCriticalCourses"),
+	
 	@DefaultValue("Preferences")
 	@Values({"Disabled", "Preferences", "Assignments", "Enabled"})
 	@Description("Instructors: alow editing unavailable dates, possible values:\n"
@@ -3000,6 +3036,17 @@ public enum ApplicationProperty {
 	@Description("Wait-Listing: log wait-list changes into the WaitList table.")
 	WaitListLogging("unitime.enrollment.waitList.logging"),
 	
+	@Type(Boolean.class)
+	@DefaultValue("true")
+	@Description("Instructional Offering Configuration: allow instructional method to be changed on a wait-listed course when there are students enrolled")
+	@Since(4.7)
+	WaitListCanChangeInstructionalMethod("unitime.offering.waitList.canChangeInstructionalMethod"),
+	
+	@Type(Boolean.class)
+	@DefaultValue("true")
+	@Description("Edit Subpart / Class: allow date pattern to be changed on a wait-listed course when there are students enrolled")
+	@Since(4.7)
+	WaitListCanChangeDatePattern("unitime.offering.waitList.canChangeDatePattern"),
 	
 	@Type(Boolean.class)
 	@DefaultValue("false")

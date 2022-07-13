@@ -906,7 +906,7 @@ public class GetAssignment extends WaitlistedOnlineSectioningAction<ClassAssignm
 						rc.setOverrideTimeStamp(((XCourseRequest)cd).getOverrideTimeStamp(courseId));
 						((XCourseRequest)cd).fillPreferencesIn(rc, courseId);
 						r.addRequestedCourse(rc);
-						if (showWaitListPosition && rc.isCanWaitList() && ((XCourseRequest)cd).getEnrollment() == null && ((XCourseRequest)cd).isWaitlist()) {
+						if (showWaitListPosition && rc.isCanWaitList() && ((XCourseRequest)cd).isWaitlist()) {
 							rc.setWaitListPosition(getWaitListPosition(offering, student, (XCourseRequest)cd, courseId, server, helper));
 						}
 					}
@@ -914,7 +914,9 @@ public class GetAssignment extends WaitlistedOnlineSectioningAction<ClassAssignm
 					r.setNoSub(((XCourseRequest)cd).isNoSub(wlMode));
 					r.setCritical(((XCourseRequest)cd).getCritical());
 					r.setTimeStamp(((XCourseRequest)cd).getTimeStamp());
-					r.setWaitListedTimeStamp(((XCourseRequest)cd).getWaitListedTimeStamp());
+					if (r.isWaitList())
+						r.setWaitListedTimeStamp(((XCourseRequest)cd).getWaitListedTimeStamp());
+					r.setWaitListSwapWithCourseOfferingId(((XCourseRequest)cd).getWaitListSwapWithCourseOffering() == null ? null : ((XCourseRequest)cd).getWaitListSwapWithCourseOffering().getCourseId());
 					if (r.hasRequestedCourse()) {
 						if (cd.isAlternative())
 							request.getAlternatives().add(r);
@@ -938,6 +940,24 @@ public class GetAssignment extends WaitlistedOnlineSectioningAction<ClassAssignm
 										message += MSG.conflictWithLast(ov);
 								}
 								request.addConfirmationMessage(rc.getCourseId(), rc.getCourseName(), "WL-OVERLAP", message + ".", 0);
+							}
+						}
+						if (r.isWaitList() && r.getWaitListSwapWithCourseOfferingId() != null && r.hasRequestedCourse()) {
+							XEnrollment enrollment = ((XCourseRequest)cd).getEnrollment();
+							if (enrollment != null && enrollment.getCourseId().equals(r.getWaitListSwapWithCourseOfferingId())) {
+								boolean before = true;
+								for (RequestedCourse rc: r.getRequestedCourse()) {
+									if (r.getWaitListSwapWithCourseOfferingId().equals(rc.getCourseId())) {
+										if (((XCourseRequest)cd).isRequired(enrollment, server.getOffering(enrollment.getOfferingId()))) {
+											rc.setStatus(RequestedCourseStatus.WAITLIST_INACTIVE);
+											request.addConfirmationMessage(rc.getCourseId(), rc.getCourseName(), "WL-INACTIVE", MSG.waitListRequirementsMet(), 0);
+										}
+										before = false;
+									} else if (!before) {
+										rc.setStatus(RequestedCourseStatus.WAITLIST_INACTIVE);
+										request.addConfirmationMessage(rc.getCourseId(), rc.getCourseName(), "WL-INACTIVE", MSG.waitListLowPriority(), 0);
+									}
+								}
 							}
 						}
 					}

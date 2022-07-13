@@ -263,8 +263,8 @@ public class FindEnrollmentAction extends WaitlistedOnlineSectioningAction<List<
 			c.setHasCrossList(offering.hasCrossList());
 			c.setCanWaitList(offering.isWaitList());
 			e.setCourse(c);
-			e.setWaitList(request.isWaitlist());
-			e.setNoSub(request.isNoSub());
+			e.setWaitList(request.isWaitlist(wl));
+			e.setNoSub(request.isNoSub(wl));
 			if (request.getEnrollment() == null) {
 				e.setEnrollmentMessage(request.getEnrollmentMessage());
 				if (request.getEnrollment() == null && request.hasOverrides()) {
@@ -408,9 +408,11 @@ public class FindEnrollmentAction extends WaitlistedOnlineSectioningAction<List<
 			if (request.getTimeStamp() != null)
 				e.setRequestedDate(request.getTimeStamp());
 			e.setCritical(request.getCritical());
-			if (request.getWaitListedTimeStamp() != null && request.getEnrollment() == null)
+			if (e.isWaitList() && request.getWaitListedTimeStamp() != null)
 				e.setWaitListedDate(request.getWaitListedTimeStamp());
 			e.setWaitListedPosition(getWaitListPosition(offering, student, request, course, server, helper));
+			if (student.isEnrolled(request.getWaitListSwapWithCourseOffering()))
+				e.setWaitListedReplacement(request.getWaitListSwapWithCourseOffering().getCourseName());
 			if (request.getEnrollment() != null) {
 				if (request.getEnrollment().getReservation() != null) {
 					switch (request.getEnrollment().getReservation().getType()) {

@@ -1148,7 +1148,7 @@ public class SectioningStatusPage extends Composite {
 		line.add(new NumberCell(null, e.getProjection()));
 		if (iCourseInfoVisibleColums.hasSnapshot)
 			line.add(new NumberCell(null, e.getSnapshot()));
-		line.add(new NumberCell(e.getEnrollment(), e.getTotalEnrollment()));
+		line.add(new EnrollmentCell(e));
 		line.add(new WaitListCell(e));
 		line.add(new NumberCell(e.getUnassignedAlternative(), e.getTotalUnassignedAlternative()));
 		line.add(new NumberCell(e.getReservation(), e.getTotalReservation()));
@@ -2236,6 +2236,13 @@ public class SectioningStatusPage extends Composite {
 			addSortOperation(hEmailTS, StudentComparator.SortBy.EMAIL_TS, MESSAGES.colEmailTimeStamp());
 		}
 		
+		UniTimeTableHeader hPref = null;
+		if (iStudentInfoVisibleColumns.hasPref) {
+			hPref = new UniTimeTableHeader(MESSAGES.colSchedulingPreference());
+			header.add(hPref);
+			addSortOperation(hPref, StudentComparator.SortBy.PREF, MESSAGES.colSchedulingPreference());
+		}
+		
 		iStudentTable.addRow(null, header);
 		
 		if (SectioningStatusCookie.getInstance().getSortBy(iOnline, 1) != 0) {
@@ -2283,6 +2290,7 @@ public class SectioningStatusPage extends Composite {
 			case DEGREE: h = hDegree; break;
 			case PROGRAM: h = hProgram; break;
 			case CAMPUS: h = hCampus; break;
+			case PREF: h = hPref; break;
 			}
 			if (h != null) {
 				Collections.sort(result, new StudentComparator(sort, asc, g));
@@ -2418,7 +2426,7 @@ public class SectioningStatusPage extends Composite {
 			line.add(new HTML("&nbsp;", false));
 		}
 		if (iStudentInfoVisibleColumns.hasEnrollment)
-			line.add(new NumberCell(info.getEnrollment(), info.getTotalEnrollment()));
+			line.add(new EnrollmentCell(info));
 		if (iStudentInfoVisibleColumns.hasWaitList)
 			line.add(new WaitListCell(info));
 		if (iStudentInfoVisibleColumns.hasReservation)
@@ -2478,6 +2486,11 @@ public class SectioningStatusPage extends Composite {
 				line.add(new HTML("&nbsp;", false));
 			if (iOnline && iStudentInfoVisibleColumns.hasEmailed)
 				line.add(new HTML("&nbsp;", false));
+		}
+		if (iStudentInfoVisibleColumns.hasPref) {
+			HTML html = new HTML(info.hasPreference() ? info.getPreference() : "", false);
+			if (info.hasPreference()) html.getElement().getStyle().setWhiteSpace(WhiteSpace.PRE);
+			line.add(html);
 		}
 		iStudentTable.addRow(info, line);
 	}
@@ -2839,12 +2852,30 @@ public class SectioningStatusPage extends Composite {
 			case MISSING_COURSES:
 				if (value != null && value.getMissingCritical() != null && value.getMissingPrimary() != null) {
 					if (value.getMissingCritical() > 0) {
-						if (value.getMissingPrimary() > value.getMissingCritical()) {
-							setHTML(MESSAGES.advisedMissingCriticalOther(value.getMissingCritical(), value.getMissingPrimary() - value.getMissingCritical()));
-							title = MESSAGES.hintAdvisedMissingCriticalOther(value.getMissingCritical(), value.getMissingPrimary() - value.getMissingCritical());
+						if (value.isAdvisorImportant()) {
+							if (value.getMissingPrimary() > value.getMissingCritical()) {
+								setHTML(MESSAGES.advisedMissingImportantOther(value.getMissingCritical(), value.getMissingPrimary() - value.getMissingCritical()));
+								title = MESSAGES.hintAdvisedMissingImportantOther(value.getMissingCritical(), value.getMissingPrimary() - value.getMissingCritical());
+							} else {
+								setHTML(MESSAGES.advisedMissingImportant(value.getMissingCritical()));
+								title = MESSAGES.hintAdvisedMissingImportant(value.getMissingCritical());
+							}
+						} else if (value.isAdvisorVital()) {
+							if (value.getMissingPrimary() > value.getMissingCritical()) {
+								setHTML(MESSAGES.advisedMissingVitalOther(value.getMissingCritical(), value.getMissingPrimary() - value.getMissingCritical()));
+								title = MESSAGES.hintAdvisedMissingVitalOther(value.getMissingCritical(), value.getMissingPrimary() - value.getMissingCritical());
+							} else {
+								setHTML(MESSAGES.advisedMissingVital(value.getMissingCritical()));
+								title = MESSAGES.hintAdvisedMissingVital(value.getMissingCritical());
+							}
 						} else {
-							setHTML(MESSAGES.advisedMissingCritical(value.getMissingCritical()));
-							title = MESSAGES.hintAdvisedMissingCritical(value.getMissingCritical());
+							if (value.getMissingPrimary() > value.getMissingCritical()) {
+								setHTML(MESSAGES.advisedMissingCriticalOther(value.getMissingCritical(), value.getMissingPrimary() - value.getMissingCritical()));
+								title = MESSAGES.hintAdvisedMissingCriticalOther(value.getMissingCritical(), value.getMissingPrimary() - value.getMissingCritical());
+							} else {
+								setHTML(MESSAGES.advisedMissingCritical(value.getMissingCritical()));
+								title = MESSAGES.hintAdvisedMissingCritical(value.getMissingCritical());
+							}
 						}
 					} else if (value.getMissingPrimary() > 0) {
 						setHTML(MESSAGES.advisedMissingPrimary(value.getMissingPrimary()));
@@ -2855,12 +2886,30 @@ public class SectioningStatusPage extends Composite {
 			case NOT_ENROLLED_COURSES:
 				if (value != null && value.getNotAssignedPrimary() != null && value.getNotAssignedCritical() != null) {
 					if (value.getNotAssignedCritical() > 0) {
-						if (value.getNotAssignedPrimary() > value.getNotAssignedCritical()) {
-							setHTML(MESSAGES.advisedNotAssignedCriticalOther(value.getNotAssignedCritical(), value.getNotAssignedPrimary() - value.getNotAssignedCritical()));
-							title = MESSAGES.hintAdvisedNotAssignedCriticalOther(value.getNotAssignedCritical(), value.getNotAssignedPrimary() - value.getNotAssignedCritical());
+						if (value.isAdvisorImportant()) {
+							if (value.getNotAssignedPrimary() > value.getNotAssignedCritical()) {
+								setHTML(MESSAGES.advisedNotAssignedImportantOther(value.getNotAssignedCritical(), value.getNotAssignedPrimary() - value.getNotAssignedCritical()));
+								title = MESSAGES.hintAdvisedNotAssignedImportantOther(value.getNotAssignedCritical(), value.getNotAssignedPrimary() - value.getNotAssignedCritical());
+							} else {
+								setHTML(MESSAGES.advisedNotAssignedImportant(value.getNotAssignedCritical()));
+								title = MESSAGES.hintAdvisedNotAssignedImportant(value.getNotAssignedCritical());
+							}
+						} else if (value.isAdvisorVital()) {
+							if (value.getNotAssignedPrimary() > value.getNotAssignedCritical()) {
+								setHTML(MESSAGES.advisedNotAssignedVitalOther(value.getNotAssignedCritical(), value.getNotAssignedPrimary() - value.getNotAssignedCritical()));
+								title = MESSAGES.hintAdvisedNotAssignedVitalOther(value.getNotAssignedCritical(), value.getNotAssignedPrimary() - value.getNotAssignedCritical());
+							} else {
+								setHTML(MESSAGES.advisedNotAssignedVital(value.getNotAssignedCritical()));
+								title = MESSAGES.hintAdvisedNotAssignedVital(value.getNotAssignedCritical());
+							}
 						} else {
-							setHTML(MESSAGES.advisedNotAssignedCritical(value.getNotAssignedCritical()));
-							title = MESSAGES.hintAdvisedNotAssignedCritical(value.getNotAssignedCritical());
+							if (value.getNotAssignedPrimary() > value.getNotAssignedCritical()) {
+								setHTML(MESSAGES.advisedNotAssignedCriticalOther(value.getNotAssignedCritical(), value.getNotAssignedPrimary() - value.getNotAssignedCritical()));
+								title = MESSAGES.hintAdvisedNotAssignedCriticalOther(value.getNotAssignedCritical(), value.getNotAssignedPrimary() - value.getNotAssignedCritical());
+							} else {
+								setHTML(MESSAGES.advisedNotAssignedCritical(value.getNotAssignedCritical()));
+								title = MESSAGES.hintAdvisedNotAssignedCritical(value.getNotAssignedCritical());
+							}
 						}
 					} else if (value.getNotAssignedPrimary() > 0) {
 						setHTML(MESSAGES.advisedNotAssignedPrimary(value.getNotAssignedPrimary()));
@@ -3108,6 +3157,46 @@ public class SectioningStatusPage extends Composite {
 		}
 	}
 	
+	public static class EnrollmentCell extends HTML implements HasCellAlignment {
+		public EnrollmentCell(int enrl, int tEnrl, int swap, int tSwap) {
+			super();
+			if (tSwap == 0 || tSwap == tEnrl) {
+				// no wait-list or all wait-listed
+				if (enrl == tEnrl) {
+					setHTML(enrl == 0 ? "-" : String.valueOf(enrl));
+				} else {
+					setHTML(enrl + " / " + tEnrl);
+				}
+				if (tSwap > 0)
+					setHTML(getHTML() + MESSAGES.htmlWaitListSign());
+			} else if (swap == tSwap && enrl == tEnrl) {
+				setHTML(swap == 0 ? String.valueOf(enrl) : swap == enrl ? swap + MESSAGES.htmlWaitListSign() : (enrl - swap) + " + " + swap + MESSAGES.htmlWaitListSign());
+			} else {
+				setHTML((swap == 0 ? String.valueOf(enrl) : swap == enrl ? swap + MESSAGES.htmlWaitListSign() : (enrl - swap) + " + " + swap + MESSAGES.htmlWaitListSign())
+						+ " / " + tEnrl);
+			}
+		}
+			
+		public EnrollmentCell(StudentInfo e) {
+			this(e.hasEnrollment() ? e.getEnrollment() : 0,
+				e.hasTotalEnrollment() ? e.getTotalEnrollment() : 0,
+				e.hasSwap() ? e.getSwap() : 0,
+				e.hasTotalSwap() ? e.getTotalSwap() : 0);
+		}
+		
+		public EnrollmentCell(EnrollmentInfo e) {
+			this(e.hasEnrollment() ? e.getEnrollment() : 0,
+				e.hasTotalEnrollment() ? e.getTotalEnrollment() : 0,
+				e.hasSwap() ? e.getSwap() : 0,
+				e.hasTotalSwap() ? e.getTotalSwap() : 0);
+		}
+
+		@Override
+		public HorizontalAlignmentConstant getCellAlignment() {
+			return HasHorizontalAlignment.ALIGN_RIGHT;
+		}
+	}
+	
 	public static class EnrollmentComparator implements Comparator<EnrollmentInfo> {
 		public enum SortBy {
 			SUBJECT,
@@ -3195,6 +3284,8 @@ public class SectioningStatusPage extends Composite {
 				cmp = (e1.getEnrollment() == null ? Integer.valueOf(0) : e1.getEnrollment()).compareTo(e2.getEnrollment() == null ? 0 : e2.getEnrollment());
 				if (cmp != 0) return - cmp;
 				cmp = (e1.getTotalEnrollment() == null ? Integer.valueOf(0) : e1.getTotalEnrollment()).compareTo(e2.getTotalEnrollment() == null ? 0 : e2.getTotalEnrollment());
+				if (cmp != 0) return - cmp;
+				cmp = (e1.getTotalSwap() == null ? Integer.valueOf(0) : e1.getTotalSwap()).compareTo(e2.getTotalSwap() == null ? 0 : e2.getTotalSwap());
 				if (cmp != 0) return - cmp;
 				break;
 			case WAITLIST:
@@ -3285,6 +3376,7 @@ public class SectioningStatusPage extends Composite {
 			DEGREE,
 			PROGRAM,
 			CAMPUS,
+			PREF,
 			;
 		}
 		
@@ -3434,6 +3526,8 @@ public class SectioningStatusPage extends Composite {
 				cmp = Integer.compare(e1.getAdvisedInfo() == null ? 0 : e1.getAdvisedInfo().getNotAssignedCritical(), e2.getAdvisedInfo() == null ? 0 : e2.getAdvisedInfo().getNotAssignedCritical());
 				if (cmp != 0) return cmp;
 				return Integer.compare(e1.getAdvisedInfo() == null ? 0 : e1.getAdvisedInfo().getNotAssignedPrimary(), e2.getAdvisedInfo() == null ? 0 : e2.getAdvisedInfo().getNotAssignedPrimary());
+			case PREF:
+				return (e1.hasPreference() ? e1.getPreference() : "").compareTo(e2.hasPreference() ? e2.getPreference() : "");
 			default:
 				return 0;
 			}
@@ -3685,7 +3779,7 @@ public class SectioningStatusPage extends Composite {
 		boolean hasEnrollment = false, hasWaitList = false,  hasArea = false, hasMajor = false, hasGroup = false, hasAcmd = false, hasReservation = false,
 				hasRequestedDate = false, hasEnrolledDate = false, hasConsent = false, hasCredit = false, hasReqCred = false, hasDistances = false, hasOverlaps = false,
 				hasFreeTimeOverlaps = false, hasPrefIMConfs = false, hasPrefSecConfs = false, hasNote = false, hasEmailed = false, hasOverride = false, hasExtId = false,
-				hasAdvisor = false, hasAdvisedInfo = false, hasMinor = false, hasConc = false, hasDeg = false, hasProg = false, hasCamp = false;
+				hasAdvisor = false, hasAdvisedInfo = false, hasMinor = false, hasConc = false, hasDeg = false, hasProg = false, hasCamp = false, hasPref = false;
 		int selectableStudents = 0;
 		Set<String> groupTypes = new TreeSet<String>();
 		
@@ -3724,6 +3818,7 @@ public class SectioningStatusPage extends Composite {
 				if (e.getStudent().hasDegree()) hasDeg = true;
 				if (e.getStudent().hasProgram()) hasProg = true;
 				if (e.getStudent().hasCampus()) hasCamp = true;
+				if (e.hasPreference()) hasPref = true;
 			}
 		}
 	}

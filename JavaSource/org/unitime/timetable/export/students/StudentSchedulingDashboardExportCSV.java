@@ -199,7 +199,7 @@ public class StudentSchedulingDashboardExportCSV implements Exporter {
 							(e.getCourseId() == null ? number(e.getAvailable(), e.getLimit()) : available(e)),
 							number(null, e.getProjection()),
 							number(null, e.getSnapshot()),
-							number(e.getEnrollment(), e.getTotalEnrollment()),
+							enrollment(e),
 							waitlist(e),
 							number(e.getUnassignedAlternative(), e.getTotalUnassignedAlternative()),
 							number(e.getReservation(), e.getTotalReservation()),
@@ -215,7 +215,7 @@ public class StudentSchedulingDashboardExportCSV implements Exporter {
 							(e.getCourseId() == null ? number(e.getAvailable(), e.getLimit()) : available(e)),
 							number(null, e.getProjection()),
 							number(null, e.getSnapshot()),
-							number(e.getEnrollment(), e.getTotalEnrollment()),
+							enrollment(e),
 							waitlist(e),
 							number(e.getUnassignedAlternative(), e.getTotalUnassignedAlternative()),
 							number(e.getReservation(), e.getTotalReservation()),
@@ -232,7 +232,7 @@ public class StudentSchedulingDashboardExportCSV implements Exporter {
 							(e.getCourseId() == null ? number(e.getAvailable(), e.getLimit()) : available(e)),
 							number(null, e.getProjection()),
 							number(null, e.getSnapshot()),
-							number(e.getEnrollment(), e.getTotalEnrollment()),
+							enrollment(e),
 							waitlist(e),
 							number(e.getUnassignedAlternative(), e.getTotalUnassignedAlternative()),
 							number(e.getReservation(), e.getTotalReservation()),
@@ -253,7 +253,7 @@ public class StudentSchedulingDashboardExportCSV implements Exporter {
 		boolean hasEnrollment = false, hasWaitList = false,  hasArea = false, hasMajor = false, hasGroup = false, hasAcmd = false, hasReservation = false,
 				hasRequestedDate = false, hasEnrolledDate = false, hasConsent = false, hasReqCredit = false, hasCredit = false, hasDistances = false, hasOverlaps = false,
 				hasFreeTimeOverlaps = false, hasPrefIMConfs = false, hasPrefSecConfs = false, hasNote = false, hasEmailed = false, hasOverride = false, hasAdvisor = false,
-				hasAdvisedInfo = false, hasMinor = false, hasConc = false, hasDeg = false, hasProg = false, hasCamp = false;
+				hasAdvisedInfo = false, hasMinor = false, hasConc = false, hasDeg = false, hasProg = false, hasCamp = false, hasPref = false;
 		Set<String> groupTypes = new TreeSet<String>();
 		if (students != null)
 			for (ClassAssignmentInterface.StudentInfo e: students) {
@@ -287,6 +287,7 @@ public class StudentSchedulingDashboardExportCSV implements Exporter {
 				if (e.getStudent().hasDegree()) hasDeg = true;
 				if (e.getStudent().hasProgram()) hasProg = true;
 				if (e.getStudent().hasCampus()) hasCamp = true;
+				if (e.hasPreference()) hasPref = true;
 			}
 		
 		List<String> header = new ArrayList<String>();
@@ -386,6 +387,9 @@ public class StudentSchedulingDashboardExportCSV implements Exporter {
 		if (hasEmailed)
 			header.add(MESSAGES.colEmailTimeStamp());
 		
+		if (hasPref)
+			header.add(MESSAGES.colSchedulingPreference());
+		
 		out.printHeader(header.toArray(new String[header.size()]));
 		out.flush();
 		
@@ -421,7 +425,7 @@ public class StudentSchedulingDashboardExportCSV implements Exporter {
 						line.add(info.getStudent().getAccommodation("\n"));
 					line.add(info.getStatus());
 					if (hasEnrollment)
-						line.add(number(info.getEnrollment(), info.getTotalEnrollment()));
+						line.add(enrollment(info));
 					if (hasWaitList)
 						line.add(waitlist(info));
 					if (hasReservation)
@@ -519,7 +523,7 @@ public class StudentSchedulingDashboardExportCSV implements Exporter {
 					if (hasAcmd)
 						line.add("");
 					if (hasEnrollment)
-						line.add(number(info.getEnrollment(), info.getTotalEnrollment()));
+						line.add(enrollment(info));
 					if (hasWaitList)
 						line.add(waitlist(info));
 					if (hasReservation)
@@ -559,6 +563,8 @@ public class StudentSchedulingDashboardExportCSV implements Exporter {
 					if (hasEmailed)
 						line.add("");
 				}
+				if (hasPref)
+					line.add(info.hasPreference() ? info.getPreference() : "");
 				out.printLine(line.toArray(new String[line.size()]));				
 			}
 		
@@ -642,6 +648,16 @@ public class StudentSchedulingDashboardExportCSV implements Exporter {
 		}
 	}
 	
+	public String enrollment(int enrl, int tEnrl, int swap, int tSwap) {
+		if (tSwap == 0 || tSwap == tEnrl) { // no swaps or all swaps
+			return number(enrl, tEnrl) + (tSwap > 0 ? MESSAGES.csvWaitListSign() : "");
+		} else if (swap == tSwap && enrl == tEnrl) { // same total
+			return (swap == 0 ? String.valueOf(enrl) : swap == enrl ? swap + MESSAGES.csvWaitListSign() : (enrl - swap) + " + " + swap + MESSAGES.csvWaitListSign());
+		} else {
+			return (swap == 0 ? String.valueOf(enrl) : swap == enrl ? swap + MESSAGES.csvWaitListSign() : (enrl - swap) + " + " + swap + MESSAGES.csvWaitListSign()) + " / " + tEnrl;
+		}
+	}
+	
 	public String waitlist(int wait, int tWait, int noSub, int tNoSub, int unasg, int tUnasg, Integer topWaitingPriority) {
 		if (tNoSub == 0) {
 			// no no-subs -- like before
@@ -692,6 +708,22 @@ public class StudentSchedulingDashboardExportCSV implements Exporter {
 			else
 				return unasg + " / " + tUnasg;
 		}
+	}
+	
+	public String enrollment(StudentInfo e) {
+		return enrollment(
+				e.hasEnrollment() ? e.getEnrollment() : 0,
+				e.hasTotalEnrollment() ? e.getTotalEnrollment() : 0,
+				e.hasSwap() ? e.getSwap() : 0,
+				e.hasTotalSwap() ? e.getTotalSwap() : 0);
+	}
+	
+	public String enrollment(EnrollmentInfo e) {
+		return enrollment(
+				e.hasEnrollment() ? e.getEnrollment() : 0,
+				e.hasTotalEnrollment() ? e.getTotalEnrollment() : 0,
+				e.hasSwap() ? e.getSwap() : 0,
+				e.hasTotalSwap() ? e.getTotalSwap() : 0);
 	}
 		
 	public String waitlist(StudentInfo e) {

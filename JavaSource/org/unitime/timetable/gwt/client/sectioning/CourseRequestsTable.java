@@ -342,7 +342,7 @@ public class CourseRequestsTable extends P implements HasValue<CourseRequestInte
 					switch (result.getMaxCreditOverrideStatus()) {
 					case CREDIT_HIGH:
 						iCreditStatusIcon.setResource(RESOURCES.requestNeeded());
-						warning += "\n" + MESSAGES.creditStatusTooHigh();
+						warning += "\n" + MESSAGES.creditStatusDeniedShort();
 						break;
 					case OVERRIDE_REJECTED:
 						iCreditStatusIcon.setResource(RESOURCES.requestError());
@@ -665,6 +665,26 @@ public class CourseRequestsTable extends P implements HasValue<CourseRequestInte
 					RequestedCourse rc = box.getValue();
 					if (rc != null && course.equals(rc.getCourseId()))
 						return line.getWaitList();
+				}
+		}
+		return null;
+	}
+	
+	public CourseRequestLine getWaitListedLine(Long course) {
+		if ((iWaitListMode == WaitListMode.WaitList || iWaitListMode == WaitListMode.NoSubs) && course != null) {
+			// skip inactive first
+			for (CourseRequestLine line: iCourses)
+				for (CourseSelectionBox box: line.getCourses()) {
+					RequestedCourse rc = box.getValue();
+					if (rc != null && course.equals(rc.getCourseId()) && !rc.isInactive())
+						return line;
+				}
+			// all courses next
+			for (CourseRequestLine line: iCourses)
+				for (CourseSelectionBox box: line.getCourses()) {
+					RequestedCourse rc = box.getValue();
+					if (rc != null && course.equals(rc.getCourseId()))
+						return line;
 				}
 		}
 		return null;

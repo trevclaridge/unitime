@@ -67,6 +67,7 @@ import org.unitime.timetable.gwt.shared.ClassAssignmentInterface.EnrollmentInfo;
 import org.unitime.timetable.gwt.shared.ClassAssignmentInterface.SectioningAction;
 import org.unitime.timetable.gwt.shared.CourseRequestInterface;
 import org.unitime.timetable.gwt.shared.CourseRequestInterface.CheckCoursesResponse;
+import org.unitime.timetable.gwt.shared.CourseRequestInterface.Request;
 import org.unitime.timetable.gwt.shared.CourseRequestInterface.RequestedCourse;
 import org.unitime.timetable.gwt.shared.CourseRequestInterface.RequestedCourseStatus;
 import org.unitime.timetable.gwt.shared.DegreePlanInterface;
@@ -103,6 +104,7 @@ import org.unitime.timetable.gwt.shared.SpecialRegistrationInterface.UpdateSpeci
 import org.unitime.timetable.gwt.shared.SpecialRegistrationInterface.VariableTitleCourseInfo;
 import org.unitime.timetable.gwt.shared.SpecialRegistrationInterface.VariableTitleCourseRequest;
 import org.unitime.timetable.gwt.shared.SpecialRegistrationInterface.VariableTitleCourseResponse;
+import org.unitime.timetable.gwt.shared.StudentSchedulingPreferencesInterface;
 import org.unitime.timetable.interfaces.ExternalClassNameHelperInterface.HasGradableSubpart;
 import org.unitime.timetable.gwt.shared.ClassAssignmentInterface.CourseAssignment;
 import org.unitime.timetable.model.Advisor;
@@ -171,6 +173,7 @@ import org.unitime.timetable.onlinesectioning.basic.CourseRequestEligibility;
 import org.unitime.timetable.onlinesectioning.basic.GetAssignment;
 import org.unitime.timetable.onlinesectioning.basic.GetDegreePlans;
 import org.unitime.timetable.onlinesectioning.basic.GetRequest;
+import org.unitime.timetable.onlinesectioning.basic.GetStudentPreferences;
 import org.unitime.timetable.onlinesectioning.basic.ListClasses;
 import org.unitime.timetable.onlinesectioning.basic.ListCourseOfferings;
 import org.unitime.timetable.onlinesectioning.basic.ListEnrollments;
@@ -225,6 +228,7 @@ import org.unitime.timetable.onlinesectioning.status.db.DbFindOnlineSectioningLo
 import org.unitime.timetable.onlinesectioning.status.db.DbFindStudentInfoAction;
 import org.unitime.timetable.onlinesectioning.updates.ApproveEnrollmentsAction;
 import org.unitime.timetable.onlinesectioning.updates.ChangeStudentGroup;
+import org.unitime.timetable.onlinesectioning.updates.ChangeStudentPreferences;
 import org.unitime.timetable.onlinesectioning.updates.ChangeStudentStatus;
 import org.unitime.timetable.onlinesectioning.updates.EnrollStudent;
 import org.unitime.timetable.onlinesectioning.updates.MassCancelAction;
@@ -988,7 +992,10 @@ public class SectioningServlet implements SectioningService, DisposableBean {
 				selectedAssignment = new ClassAssignmentInterface.ClassAssignment();
 				selectedAssignment.setCourseId(course.getCourseId());
 			}
-			Collection<ClassAssignmentInterface> ret = server.execute(server.createAction(ComputeSuggestionsAction.class).forRequest(request).withAssignment(currentAssignment).withSelection(selectedAssignment).withFilter(filter), currentUser(request));
+			Collection<ClassAssignmentInterface> ret = server.execute(server.createAction(ComputeSuggestionsAction.class)
+					.forRequest(request).withAssignment(currentAssignment).withSelection(selectedAssignment).withFilter(filter)
+					.withCanRequire(request.getStudentId() == null || getSessionContext().hasPermissionAnyAuthority(request.getStudentId(), "Student", Right.StudentSchedulingCanRequirePreferences)),
+					currentUser(request));
 			if (ret != null) {
 				boolean canEnroll = server.getAcademicSession().isSectioningEnabled() && request.getStudentId() != null;
 				for (ClassAssignmentInterface ca: ret)
@@ -1512,6 +1519,8 @@ public class SectioningServlet implements SectioningService, DisposableBean {
 							e.setRequestedDate(request.getCourseDemand().getTimestamp());
 							e.setCritical(request.getCourseDemand().getEffectiveCritical().ordinal());
 							e.setWaitListedDate(request.getCourseDemand().getWaitlistedTimeStamp());
+							if (request.getCourseDemand().getStudent().isEnrolled(request.getCourseDemand().getWaitListSwapWithCourseOffering()))
+								e.setWaitListedReplacement(request.getCourseDemand().getWaitListSwapWithCourseOffering().getCourseName());
 						}
 					return new ArrayList<ClassAssignmentInterface.Enrollment>(student2enrollment.values());
 				} else {
@@ -1787,7 +1796,7 @@ public class SectioningServlet implements SectioningService, DisposableBean {
 								SpecialRegistrationProvider sp = Customization.SpecialRegistrationProvider.getProvider();
 								OnlineSectioningHelper helper = new OnlineSectioningHelper(hibSession, currentUser());
 								server = getServerInstance(student.getSession().getUniqueId(), true);
-								ret.setSpecialRegistrations(sp.retrieveAllRegistrations(server, helper, new XStudent(student, helper, server.getAcademicSession().getFreeTimePattern())));
+								ret.setSpecialRegistrations(sp.retrieveAllRegistrations(server, helper, new XStudent(student, helper, server.getAcademicSession().getFreeTimePattern(), server.getAcademicSession().getDatePatternFirstDate())));
 							} catch (Exception e) {}
 						}
 						
@@ -2462,7 +2471,9 @@ public class SectioningServlet implements SectioningService, DisposableBean {
 					else
 						r.setCritical(cd.getCritical());
 					r.setTimeStamp(cd.getTimestamp());
-					r.setWaitListedTimeStamp(cd.getWaitlistedTimeStamp());
+					if (r.isWaitList())
+						r.setWaitListedTimeStamp(cd.getWaitlistedTimeStamp());
+					r.setWaitListSwapWithCourseOfferingId(cd.getWaitListSwapWithCourseOffering() == null ? null : cd.getWaitListSwapWithCourseOffering().getUniqueId());
 					lastRequest = r;
 					lastRequestPriority = cd.getPriority();
 				}
@@ -3009,7 +3020,11 @@ public class SectioningServlet implements SectioningService, DisposableBean {
 		if (cx.getStudentId() == null)
 			sLog.debug("ContextCheck: no student id (assuming guess access)");
 		if (cx.getStudentId() != null && !cx.getStudentId().equals(getStudentId(cx.getSessionId()))) {
-			sLog.info("ContextCheck: different student id, permission check: " + getSessionContext().hasPermissionAnySession(cx.getSessionId(), Right.StudentSchedulingAdvisor));
+			boolean check = getSessionContext().hasPermissionAnySession(cx.getSessionId(), Right.StudentSchedulingAdvisor);
+			if (check)
+				sLog.debug("ContextCheck: different student id, permission check: " + check);
+			else
+				sLog.warn("ContextCheck: different student id, permission check: " + check);
 		}
 	}
 	
@@ -3038,6 +3053,7 @@ public class SectioningServlet implements SectioningService, DisposableBean {
 				check.setFlag(EligibilityFlag.DEGREE_PLANS, CustomDegreePlansHolder.hasProvider());
 				check.setFlag(EligibilityFlag.NO_REQUEST_ARROWS, ApplicationProperty.OnlineSchedulingNoRequestArrows.isTrue());
 				check.setFlag(EligibilityFlag.CAN_REQUIRE, true);
+				check.setFlag(EligibilityFlag.SHOW_SCHEDULING_PREFS, false);
 				return check;
 			}
 			
@@ -3060,6 +3076,7 @@ public class SectioningServlet implements SectioningService, DisposableBean {
 			check.setFlag(EligibilityFlag.GWT_CONFIRMATIONS, ApplicationProperty.OnlineSchedulingGWTConfirmations.isTrue());
 			check.setFlag(EligibilityFlag.DEGREE_PLANS, CustomDegreePlansHolder.hasProvider());
 			check.setFlag(EligibilityFlag.NO_REQUEST_ARROWS, ApplicationProperty.OnlineSchedulingNoRequestArrows.isTrue());
+			check.setFlag(EligibilityFlag.SHOW_SCHEDULING_PREFS, ApplicationProperty.OnlineSchedulingStudentPreferencesEnabled.isTrue() && cx.getStudentId() != null);
 			check.setSessionId(cx.getSessionId());
 			check.setStudentId(cx.getStudentId());
 			
@@ -3704,6 +3721,8 @@ public class SectioningServlet implements SectioningService, DisposableBean {
 				ret.getRequest().setCreditNote(defaultNote);
 		}
 		
+		ret.setCriticalCheck(CourseDemand.Critical.fromText(ApplicationProperty.AdvisorCourseRequestsAllowCritical.valueOfSession(sessionId)).ordinal());
+		
 		return ret;
 	}
 	
@@ -4023,6 +4042,9 @@ public class SectioningServlet implements SectioningService, DisposableBean {
 						break authorities;
 					}
 				}
+			} else if (user != null && user instanceof AnonymousUserContext) {
+				iRole = Roles.ROLE_ANONYMOUS;
+				iAllowNoRole = true;
 			}
 		}
 
@@ -4040,9 +4062,132 @@ public class SectioningServlet implements SectioningService, DisposableBean {
 			if (Roles.ROLE_STUDENT.equals(authority.getRole())) return true;
 			
 			// allow no role (when no matching student role was found)
-			if (iAllowNoRole && Roles.ROLE_NONE.equals(authority.getRole())) return true;
+			if (iAllowNoRole && (Roles.ROLE_NONE.equals(authority.getRole()) || Roles.ROLE_ANONYMOUS.equals(authority.getRole()))) return true;
 			
 			return false;
 		}
+	}
+
+	@Override
+	public Collection<CourseAssignment> getCoursesFromRequest(StudentSectioningContext cx, Request query) throws SectioningException, PageAccessException {
+		checkContext(cx);
+		if (cx.getSessionId()==null) throw new SectioningException(MSG.exceptionNoAcademicSession());
+		
+		OnlineSectioningServer server = getServerInstance(cx.getSessionId(), false);
+		
+		if (server == null || server instanceof DatabaseServer) {
+			org.hibernate.Session hibSession = CurriculumDAO.getInstance().getSession();
+			List<OverrideType> overrides = OverrideTypeDAO.getInstance().findAll(hibSession, Order.asc("label"));
+			
+			ArrayList<ClassAssignmentInterface.CourseAssignment> results = new ArrayList<ClassAssignmentInterface.CourseAssignment>();
+			
+			for (Long courseId: query.getCourseIds()) {
+				CourseOffering c = CourseOfferingDAO.getInstance().get(courseId);
+				if (c == null) continue;
+				CourseAssignment course = new CourseAssignment();
+				course.setCourseId(c.getUniqueId());
+				course.setSubject(c.getSubjectAreaAbbv());
+				course.setCourseNbr(c.getCourseNbr());
+				course.setTitle(c.getTitle());
+				course.setNote(c.getScheduleBookNote());
+				if (c.getCredit() != null) {
+					course.setCreditText(c.getCredit().creditText());
+					course.setCreditAbbv(c.getCredit().creditAbbv());
+				}
+				course.setTitle(c.getTitle());
+				course.setHasUniqueName(true);
+				course.setHasCrossList(c.getInstructionalOffering().hasCrossList());
+				course.setCanWaitList(c.getInstructionalOffering().effectiveWaitList());
+				if (overrides != null && !overrides.isEmpty()) {
+					for (OverrideType override: overrides)
+						if (!c.getDisabledOverrides().contains(override))
+							course.addOverride(override.getReference(), override.getLabel());
+				}
+				boolean unlimited = false;
+				int courseLimit = 0;
+				for (Iterator<InstrOfferingConfig> i = c.getInstructionalOffering().getInstrOfferingConfigs().iterator(); i.hasNext(); ) {
+					InstrOfferingConfig cfg = i.next();
+					if (cfg.isUnlimitedEnrollment()) unlimited = true;
+					if (cfg.getLimit() != null) courseLimit += cfg.getLimit();
+				}
+				if (c.getReservation() != null)
+					courseLimit = c.getReservation();
+	            if (courseLimit >= 9999) unlimited = true;
+				course.setLimit(unlimited ? -1 : courseLimit);
+				course.setProjected(c.getProjectedDemand());
+				course.setEnrollment(c.getEnrollment());
+				course.setLastLike(c.getDemand());
+				results.add(course);
+				for (InstrOfferingConfig config: c.getInstructionalOffering().getInstrOfferingConfigs()) {
+					if (config.getEffectiveInstructionalMethod() != null)
+						course.addInstructionalMethod(config.getEffectiveInstructionalMethod().getUniqueId(), config.getEffectiveInstructionalMethod().getLabel());
+					else
+						course.setHasNoInstructionalMethod(true);
+				}
+			}
+			return results;
+		} else {
+			Collection<ClassAssignmentInterface.CourseAssignment> results = null;
+			try {
+				results = server.execute(server.createAction(ListCourseOfferings.class).forRequest(query).forStudent(cx.getStudentId()), currentUser(cx));
+			} catch (PageAccessException e) {
+				throw e;
+			} catch (SectioningException e) {
+				throw e;
+			} catch (Exception e) {
+				sLog.error(e.getMessage(), e);
+				throw new SectioningException(MSG.exceptionUnknown(e.getMessage()), e);
+			}
+			return results;
+		}
+	}
+
+	@Override
+	public StudentSchedulingPreferencesInterface getStudentSchedulingPreferences(StudentSectioningContext cx) throws SectioningException, PageAccessException {
+		checkContext(cx);
+		OnlineSectioningServer server = getServerInstance(cx.getSessionId(), false);
+		if (server != null) {
+			return server.execute(server.createAction(GetStudentPreferences.class).forStudent(cx.getStudentId()), currentUser(cx));
+		} else {
+			StudentSchedulingPreferencesInterface ret = new StudentSchedulingPreferencesInterface();
+			ApplicationProperties.setSessionId(cx.getSessionId());
+			ret.setAllowClassDates(ApplicationProperty.OnlineSchedulingStudentPreferencesDatesAllowed.isTrue());
+			ret.setAllowRequireOnline(ApplicationProperty.OnlineSchedulingStudentPreferencesReqOnlineAllowed.isTrue());
+			ret.setCustomNote(ApplicationProperty.OnlineSchedulingStudentPreferencesNote.value());
+			Student student = (cx.getStudentId() == null ? null : StudentDAO.getInstance().get(cx.getStudentId()));
+			if (student != null) {
+				ret.setClassModality(student.getPreferredClassModality());
+				ret.setScheduleGaps(student.getPreferredScheduleGaps());
+				ret.setClassDateFrom(student.getClassStartDate());
+				ret.setClassDateTo(student.getClassEndDate());
+			}
+			return ret;
+		}
+	}
+
+	@Override
+	public Boolean setStudentSchedulingPreferences(StudentSectioningContext cx, StudentSchedulingPreferencesInterface preferences) throws SectioningException, PageAccessException {
+		checkContext(cx);
+		if (cx.getStudentId() == null) throw new SectioningException(MSG.exceptionNoStudent());
+		OnlineSectioningServer server = getServerInstance(cx.getSessionId(), true);
+		if (server != null) {
+			server.execute(server.createAction(ChangeStudentPreferences.class).forStudent(cx.getStudentId()).withPreferences(preferences), currentUser(cx));
+		} else { 
+			Student student = StudentDAO.getInstance().get(cx.getStudentId());
+			if (student != null) {
+				student.setPreferredClassModality(preferences.getClassModality());
+				student.setPreferredScheduleGaps(preferences.getScheduleGaps());
+				student.setClassStartDate(preferences.getClassDateFrom());
+				student.setClassEndDate(preferences.getClassDateTo());
+				StudentDAO.getInstance().update(student);
+			}
+		}
+		try {
+	        SessionFactory hibSessionFactory = SessionDAO.getInstance().getSession().getSessionFactory();
+	        hibSessionFactory.getCache().evictEntity(Student.class, cx.getStudentId());
+        } catch (Exception e) {
+        	sLog.warn("Failed to evict cache: " + e.getMessage());
+        }
+		return false;
 	}
 }

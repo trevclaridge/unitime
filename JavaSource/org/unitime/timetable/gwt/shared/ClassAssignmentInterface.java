@@ -1205,6 +1205,7 @@ public class ClassAssignmentInterface implements IsSerializable, Serializable {
 		private Boolean iWaitList = null, iNoSub = null; 
 		private String iEnrollmentMessage = null;
 		private String iWaitListedPosition = null;
+		private String iWaitListReplacement = null;
 		private Integer iCritical = null;
 		
 		public Enrollment() {}
@@ -1255,6 +1256,12 @@ public class ClassAssignmentInterface implements IsSerializable, Serializable {
 			return iWaitListedPosition != null && !iWaitListedPosition.isEmpty() && isWaitList() && getStudent().getWaitListMode() == WaitListMode.WaitList;
 		}
 		public void setWaitListedPosition(String pos) { iWaitListedPosition = pos; }
+		
+		public String getWaitListReplacement() { return iWaitListReplacement; }
+		public boolean hasWaitListedReplacement() {
+			return iWaitListReplacement != null && !iWaitListReplacement.isEmpty() && isWaitList() && getStudent().getWaitListMode() == WaitListMode.WaitList;
+		}
+		public void setWaitListedReplacement(String replacesCourse) { iWaitListReplacement = replacesCourse; }
 		
 		public String getClasses(String subpart, String delim, boolean showClassNumbers) {
 			if (getCourse() == null || getCourse().getClassAssignments().isEmpty()) return "";
@@ -1311,6 +1318,7 @@ public class ClassAssignmentInterface implements IsSerializable, Serializable {
 		public boolean hasCritical() { return iCritical != null; }
 		public boolean isCritical() { return iCritical != null && iCritical.intValue() == 1; }
 		public boolean isImportant() { return iCritical != null && iCritical.intValue() == 2; }
+		public boolean isVital() { return iCritical != null && iCritical.intValue() == 3; }
 		public Integer getCritical() { return iCritical; }
 		public void setCritical(Integer critical) { iCritical = critical; }
 	}
@@ -1353,6 +1361,7 @@ public class ClassAssignmentInterface implements IsSerializable, Serializable {
 		private Long iCourseId, iOfferingId, iSubjectId, iConfigId, iSubpartId, iClazzId;
 		private Integer iLimit, iOther, iProjection, iEnrollment, iWaitlist, iReservation, iAvailable, iUnassigned, iUnassignedPrimary, iSnapshot, iNoSub;
 		private Integer iTotalEnrollment, iTotalWaitlist, iTotalReservation, iTotalUnassigned, iTotalUnassignedPrimary, iTotalNoSub;
+		private Integer iSwap, iTotalSwap;
 		private Integer iConsentNeeded, iTotalConsentNeeded;
 		private Integer iOverrideNeeded, iTotalOverrideNeeded;
 		private ClassAssignment iAssignment;
@@ -1436,6 +1445,10 @@ public class ClassAssignmentInterface implements IsSerializable, Serializable {
 		public void setWaitlist(Integer waitlist) { iWaitlist = waitlist; }
 		public boolean hasWaitlist() { return iWaitlist != null; }
 		
+		public Integer getSwap() { return iSwap; }
+		public void setSwap(Integer swap) { iSwap = swap; }
+		public boolean hasSwap() { return iSwap != null; }
+		
 		public Integer getNoSub() { return iNoSub; }
 		public void setNoSub(Integer noSub) { iNoSub = noSub; }
 		public boolean hasNoSub() { return iNoSub != null; }
@@ -1465,6 +1478,10 @@ public class ClassAssignmentInterface implements IsSerializable, Serializable {
 		public void setTotalWaitlist(Integer waitlist) { iTotalWaitlist = waitlist; }
 		public boolean hasTotalWaitlist() { return iTotalWaitlist != null; }
 		
+		public Integer getTotalSwap() { return iTotalSwap; }
+		public void setTotalSwap(Integer swap) { iTotalSwap = swap; }
+		public boolean hasTotalSwap() { return iTotalSwap != null; }
+
 		public Integer getTotalNoSub() { return iTotalNoSub; }
 		public void setTotalNoSub(Integer noSub) { iTotalNoSub = noSub; }
 		public boolean hasTotalNoSub() { return iTotalNoSub != null; }
@@ -1540,8 +1557,8 @@ public class ClassAssignmentInterface implements IsSerializable, Serializable {
 	public static class StudentInfo implements IsSerializable, Serializable {
 		private static final long serialVersionUID = 1L;
 		private Student iStudent;
-		private Integer iEnrollment, iWaitlist, iReservation, iRequested, iUnassigned, iNoSub;
-		private Integer iTotalEnrollment, iTotalWaitlist, iTotalReservation, iTotalUnassigned, iTotalNoSub;
+		private Integer iEnrollment, iWaitlist, iReservation, iRequested, iUnassigned, iNoSub, iSwap;
+		private Integer iTotalEnrollment, iTotalWaitlist, iTotalReservation, iTotalUnassigned, iTotalNoSub, iTotalSwap;
 		private Integer iConsentNeeded, iTotalConsentNeeded;
 		private Integer iTopWaitingPriority;
 		private Date iRequestedDate = null, iEnrolledDate = null, iApprovedDate = null, iEmailDate = null, iWaitListedDate = null;
@@ -1557,6 +1574,7 @@ public class ClassAssignmentInterface implements IsSerializable, Serializable {
 		private Integer iOverrideNeeded, iTotalOverrideNeeded;
 		private Boolean iMyStudent;
 		private AdvisedInfoInterface iAdvised;
+		private String iPreference;
 		
 		public StudentInfo() {}
 		
@@ -1579,6 +1597,10 @@ public class ClassAssignmentInterface implements IsSerializable, Serializable {
 		public void setNoSub(Integer noSub) { iNoSub = noSub; }
 		public boolean hasNoSub() { return iNoSub != null; }
 		
+		public Integer getSwap() { return iSwap; }
+		public void setSwap(Integer swap) { iSwap = swap; }
+		public boolean hasSwap() { return iSwap != null; }
+		
 		public Integer getUnassigned() { return iUnassigned; }
 		public void setUnassigned(Integer unassigned) { iUnassigned = unassigned; }
 		public boolean hasUnassigned() { return iUnassigned != null; }
@@ -1598,6 +1620,10 @@ public class ClassAssignmentInterface implements IsSerializable, Serializable {
 		public Integer getTotalNoSub() { return iTotalNoSub; }
 		public void setTotalNoSub(Integer noSub) { iTotalNoSub = noSub; }
 		public boolean hasTotalNoSub() { return iTotalNoSub != null; }
+		
+		public Integer getTotalSwap() { return iTotalSwap; }
+		public void setTotalSwap(Integer swap) { iTotalSwap = swap; }
+		public boolean hasTotalSwap() { return iTotalSwap != null; }
 		
 		public Integer getTotalUnassigned() { return iTotalUnassigned; }
 		public void setTotalUnassigned(Integer unassigned) { iTotalUnassigned = unassigned; }
@@ -1775,6 +1801,10 @@ public class ClassAssignmentInterface implements IsSerializable, Serializable {
 		public boolean isAdvised() { return iAdvised != null; }
 		public AdvisedInfoInterface getAdvisedInfo() { return iAdvised; }
 		public void setAdvisedInfo(AdvisedInfoInterface advised) { iAdvised = advised; }
+		
+		public boolean hasPreference() { return iPreference != null && !iPreference.isEmpty(); }
+		public void setPreference(String pref) { iPreference = pref; }
+		public String getPreference() { return iPreference; }
 	}
 
 	public static class SectioningAction implements IsSerializable, Serializable, Comparable<SectioningAction> {
@@ -1978,6 +2008,7 @@ public class ClassAssignmentInterface implements IsSerializable, Serializable {
 		private String iMessage, iNotAssignedMessage;
 		private Integer iMissingCritical, iMissingPrimary;
 		private Integer iNotAssignedCritical, iNotAssignedPrimary;
+		private Integer iAdvisorCritical = null;
 		
 		public AdvisedInfoInterface() {}
 		
@@ -2022,6 +2053,11 @@ public class ClassAssignmentInterface implements IsSerializable, Serializable {
 		public void addNotAssignedMessage(String message) {
 			iNotAssignedMessage = (iNotAssignedMessage == null ? "" : iNotAssignedMessage + "\n") +  message;
 		}
+		
+		public void setAdvisorCritical(Integer advisorCritical) { iAdvisorCritical = advisorCritical; }
+		public boolean isAdvisorCritical() { return iAdvisorCritical != null && iAdvisorCritical.intValue() == 1; }
+		public boolean isAdvisorImportant() { return iAdvisorCritical != null && iAdvisorCritical.intValue() == 2; }
+		public boolean isAdvisorVital() { return iAdvisorCritical != null && iAdvisorCritical.intValue() == 3; }
 	}
 	
 	public boolean hasCurrentCredit() { return iCurrentCredit != null && iCurrentCredit > 0f; }
