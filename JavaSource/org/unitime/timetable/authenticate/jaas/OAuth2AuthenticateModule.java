@@ -44,25 +44,28 @@ import org.apache.commons.logging.LogFactory;
 import org.unitime.timetable.ApplicationProperties;
 
 /**
- * @author Tomas Muller
+ * @author Trevor Claridge
+ * Based on LdapAuthenticateModule by Thomas Muller
  */
 @Deprecated
-public class OAuthAuthenticateModule extends AuthenticateModule {
-	private static Log sLog = LogFactory.getLog(LdapAuthenticateModule.class);
+public class OAuth2AuthenticateModule extends AuthenticateModule {
+	private static Log sLog = LogFactory.getLog(OAuth2AuthenticateModule.class);
 	private String iExternalUid;
-	private static final String Auth_URL_BASE = "https://login.microsoftonline.com/" +
-      "d958f048-e431-4277-9c8d-ebfb75e7aa64/oauth2/v2.0/authorize?" +
-      "client_id=35c2b0eb-dca6-4285-9d92-2cce111dd0fb&" +
-      "redirect_uri=https://unitime-ssotest.wallawalla.edu/OAuthSkeleton&" +
-      "scope=openid&" +
-      "response_type=code&" +
-      "response_mode=query&" +
-      "nonce=";
+	// private static final String Auth_URL_BASE = "https://login.microsoftonline.com/" +
+    //   "d958f048-e431-4277-9c8d-ebfb75e7aa64/oauth2/v2.0/authorize?" +
+    //   "client_id=35c2b0eb-dca6-4285-9d92-2cce111dd0fb&" +
+    //   "redirect_uri=https://unitime-ssotest.wallawalla.edu/OAuthSkeleton&" +
+    //   "scope=openid&" +
+    //   "response_type=code&" +
+    //   "response_mode=query&" +
+    //   "nonce=";
 
 	/**
 	 * Abort authentication (when overall authentication fails)
 	 */
 	public boolean abort() throws LoginException {
+		sLog.info("TREVOR CLARIDGE abort() in oauth2");
+
 		if (!isAuthSucceeded())
 			return false;
 		if (isAuthSucceeded() && !isCommitSucceeded())
@@ -76,6 +79,8 @@ public class OAuthAuthenticateModule extends AuthenticateModule {
 	 * Commit phase of login
 	 */
 	public boolean commit() throws LoginException {
+		sLog.info("TREVOR CLARIDGE commit() in oauth2");
+
 		if (isAuthSucceeded()) { // Check if authentication succeeded
 
 			// External UID must exist in order to get manager info
@@ -97,6 +102,8 @@ public class OAuthAuthenticateModule extends AuthenticateModule {
 	 */
 	public void initialize(Subject subject, CallbackHandler callbackHandler,
 			Map sharedState, Map options) {
+		sLog.info("TREVOR CLARIDGE initialize() in oauth2");
+
 
 		super.initialize(subject, callbackHandler, sharedState, options);
 		iExternalUid = null;
@@ -106,51 +113,55 @@ public class OAuthAuthenticateModule extends AuthenticateModule {
 	 * Authenticate the user
 	 */
 	public boolean login() throws LoginException {
+		sLog.info("TREVOR CLARIDGE login() in oauth2");
+
 		// Skip this module when LDAP provider is not set
-		// if (ApplicationProperties
-		// 		.getProperty("tmtbl.authenticate.ldap.provider") == null)
-		// 	return false;
+		if (ApplicationProperties
+				.getProperty("tmtbl.authenticate.ldap.provider") == null)
+			return false;
 
-		// sLog.debug("Performing ldap authentication ... ");
+		sLog.debug("Performing ldap authentication ... ");
 
-		// // Get callback parameters
-		// if (getCallbackHandler() == null)
-		// 	throw new LoginException("Error: no CallbackHandler available ");
+		// Get callback parameters
+		if (getCallbackHandler() == null)
+			throw new LoginException("Error: no CallbackHandler available ");
 
-		// Callback[] callbacks = new Callback[2];
-		// callbacks[0] = new NameCallback("User Name: ");
-		// callbacks[1] = new PasswordCallback("Password: ", true);
+		Callback[] callbacks = new Callback[2];
+		callbacks[0] = new NameCallback("User Name: ");
+		callbacks[1] = new PasswordCallback("Password: ", true);
 
-		// try {
-		// 	getCallbackHandler().handle(callbacks);
-		// 	String n = ((NameCallback) callbacks[0]).getName();
-		// 	String p = String.valueOf(((PasswordCallback) callbacks[1])
-		// 			.getPassword());
+		try {
+			getCallbackHandler().handle(callbacks);
+			String n = ((NameCallback) callbacks[0]).getName();
+			String p = String.valueOf(((PasswordCallback) callbacks[1])
+					.getPassword());
 
-		// 	HashMap userProps = new HashMap();
-		// 	userProps.put("username", n);
-		// 	userProps.put("password", p);
+			HashMap userProps = new HashMap();
+			userProps.put("username", n);
+			userProps.put("password", p);
 
-		// 	if (doAuthenticate(userProps))
-		// 		return true;
+			if (doAuthenticate(userProps))
+				return true;
 
-		// 	// Authentication failed
-		// 	sLog.debug("Ldap authentication failed ... ");
-		// 	setAuthSucceeded(false);
-		// 	return false;
-		// } catch (Exception ex) {
-		// 	sLog.debug("Ldap authentication failed ... " + ex.getMessage(), ex);
-		// 	setAuthSucceeded(false);
-		// 	return false;
-		// }
-		Window.Location.assign("https://example.com/");
-		return true;
+			// Authentication failed
+			sLog.debug("Ldap authentication failed ... ");
+			setAuthSucceeded(false);
+			return false;
+		} catch (Exception ex) {
+			sLog.debug("Ldap authentication failed ... " + ex.getMessage(), ex);
+			setAuthSucceeded(false);
+			return false;
+		}
+		// Window.Location.assign("https://example.com/");
+		// return true;
 	}
 
 	/**
 	 * Logs the user out
 	 */
 	public boolean logout() throws LoginException {
+		sLog.info("TREVOR CLARIDGE logout() in oauth2");
+
 		reset();
 		return true;
 	}
@@ -159,11 +170,15 @@ public class OAuthAuthenticateModule extends AuthenticateModule {
 	 * Resets user attributes and status flags
 	 */
 	public void reset() {
+		sLog.info("TREVOR CLARIDGE reset() in oauth2");
+
 		iExternalUid = null;
 		super.reset();
 	}
 
 	private static Hashtable<String, String> getEnv() {
+		sLog.info("TREVOR CLARIDGE getEnv() in oauth2");
+
 		Hashtable<String, String> env = new Hashtable();
 		env.put(Context.INITIAL_CONTEXT_FACTORY, ApplicationProperties
 				.getProperty("tmtbl.authenticate.ldap.ctxFactory",
@@ -219,6 +234,8 @@ public class OAuthAuthenticateModule extends AuthenticateModule {
 	}
 
 	public static DirContext getDirContext() throws NamingException {
+		sLog.info("TREVOR CLARIDGE getDirContext() in oauth2");
+
 		return new InitialDirContext(getEnv());
 	}
 
@@ -226,6 +243,8 @@ public class OAuthAuthenticateModule extends AuthenticateModule {
 	 * Perform actual authentication the user
 	 */
 	public boolean doAuthenticate(HashMap userProps) throws Exception {
+		sLog.info("TREVOR CLARIDGE doAuthenticate() in oauth2");
+
 		if (ApplicationProperties
 				.getProperty("tmtbl.authenticate.ldap.provider") == null)
 			throw new Exception("Ldap provider is not set.");
@@ -279,42 +298,42 @@ public class OAuthAuthenticateModule extends AuthenticateModule {
 	 * Generates a length 10 string of random letters and digits
 	 * 
 	 */
-	private String getNonceString() {
-		String possibleCharacters =  "abcdefghijklmnopqrstuvwxyz0123456789";
-		StringBuilder nonceBuilder = new StringBuilder();
-		Random rnd = new Random();
-		while (nonceBuilder.length() < 11) { // length of the random string.
-			int index = (int) (rnd.nextFloat() * possibleCharacters.length());
-			nonceBuilder.append(possibleCharacters.charAt(index));
-		}
-		String nonce = nonceBuilder.toString();
-		return nonce;
-	  }
+	// private String getNonceString() {
+	// 	String possibleCharacters =  "abcdefghijklmnopqrstuvwxyz0123456789";
+	// 	StringBuilder nonceBuilder = new StringBuilder();
+	// 	Random rnd = new Random();
+	// 	while (nonceBuilder.length() < 11) { // length of the random string.
+	// 		int index = (int) (rnd.nextFloat() * possibleCharacters.length());
+	// 		nonceBuilder.append(possibleCharacters.charAt(index));
+	// 	}
+	// 	String nonce = nonceBuilder.toString();
+	// 	return nonce;
+	//   }
 
 	/**
 	 * Builds a OAuth2 request URL string
 	 * 
-	 */
-	private String buildAuthString() {
-		String nonce = getNonceString();
-		StringBuilder strBld = new StringBuilder();
-		strBld.append(Auth_URL_BASE);
-		strBld.append(nonce);
-		return strBld.toString();
-	  }
+	//  */
+	// private String buildAuthString() {
+	// 	String nonce = getNonceString();
+	// 	StringBuilder strBld = new StringBuilder();
+	// 	strBld.append(Auth_URL_BASE);
+	// 	strBld.append(nonce);
+	// 	return strBld.toString();
+	//   }
 
-	private String getAuthCode(String url) {
-    	String[] parts = url.split("&");
-    	return parts[1].substring(5);
-  	}
+	// private String getAuthCode(String url) {
+    // 	String[] parts = url.split("&");
+    // 	return parts[1].substring(5);
+  	// }
 
-  	private String captureURL() {
-    	return Window.Location.getHref();
-  	}
+  	// private String captureURL() {
+    // 	return Window.Location.getHref();
+  	// }
 
-	private String getTokenString() {
-		String fullString = Window.Location.getHash();
-		String[] parts = fullString.split("&");
-		return parts[0].substring(14);
-	  }
+	// private String getTokenString() {
+	// 	String fullString = Window.Location.getHash();
+	// 	String[] parts = fullString.split("&");
+	// 	return parts[0].substring(14);
+	//   }
   }

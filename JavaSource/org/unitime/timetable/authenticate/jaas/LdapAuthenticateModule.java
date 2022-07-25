@@ -53,6 +53,8 @@ public class LdapAuthenticateModule extends AuthenticateModule {
 	 * Abort authentication (when overall authentication fails)
 	 */
 	public boolean abort() throws LoginException {
+		sLog.info("TREVOR CLARIDGE abort() in ldap");
+
 		if (!isAuthSucceeded())
 			return false;
 		if (isAuthSucceeded() && !isCommitSucceeded())
@@ -66,6 +68,8 @@ public class LdapAuthenticateModule extends AuthenticateModule {
 	 * Commit phase of login
 	 */
 	public boolean commit() throws LoginException {
+		sLog.info("TREVOR CLARIDGE commit() in ldap");
+
 		if (isAuthSucceeded()) { // Check if authentication succeeded
 
 			// External UID must exist in order to get manager info
@@ -112,7 +116,7 @@ public class LdapAuthenticateModule extends AuthenticateModule {
 			throw new LoginException("Error: no CallbackHandler available ");
 
 		Callback[] callbacks = new Callback[2];
-		callbacks[0] = new NameCallback("User Name: ");
+		callbacks[0] = new NameCallback("Trev: ");
 		callbacks[1] = new PasswordCallback("Password: ", true);
 
 		try {
@@ -143,6 +147,8 @@ public class LdapAuthenticateModule extends AuthenticateModule {
 	 * Logs the user out
 	 */
 	public boolean logout() throws LoginException {
+		sLog.info("TREVOR CLARIDGE logout() in ldap");
+
 		reset();
 		return true;
 	}
@@ -151,11 +157,15 @@ public class LdapAuthenticateModule extends AuthenticateModule {
 	 * Resets user attributes and status flags
 	 */
 	public void reset() {
+		sLog.info("TREVOR CLARIDGE reset() in ldap");
+
 		iExternalUid = null;
 		super.reset();
 	}
 
 	private static Hashtable<String, String> getEnv() {
+		sLog.info("TREVOR CLARIDGE getEnv() in ldap");
+
 		Hashtable<String, String> env = new Hashtable();
 		env.put(Context.INITIAL_CONTEXT_FACTORY, ApplicationProperties
 				.getProperty("tmtbl.authenticate.ldap.ctxFactory",
@@ -211,6 +221,8 @@ public class LdapAuthenticateModule extends AuthenticateModule {
 	}
 
 	public static DirContext getDirContext() throws NamingException {
+		sLog.info("TREVOR CLARIDGE getDirContext() in ldap");
+
 		return new InitialDirContext(getEnv());
 	}
 
@@ -218,6 +230,8 @@ public class LdapAuthenticateModule extends AuthenticateModule {
 	 * Perform actual authentication the user
 	 */
 	public boolean doAuthenticate(HashMap userProps) throws Exception {
+		sLog.info("TREVOR CLARIDGE doAuthenticate() in ldap");
+
 		if (ApplicationProperties
 				.getProperty("tmtbl.authenticate.ldap.provider") == null)
 			throw new Exception("Ldap provider is not set.");

@@ -17,7 +17,7 @@
  * limitations under the License.
  * 
 */
-package org.unitime.timetable.spring.ldap;
+package org.unitime.timetable.spring.oauth2;
 
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -29,24 +29,24 @@ import org.unitime.timetable.defaults.ApplicationProperty;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class SpringLdapAuthenticationProvider extends LdapAuthenticationProvider {
-	private static Log sLog = LogFactory.getLog(SpringLdapAuthenticationProvider.class);
+public class SpringOAuth2AuthenticationProvider extends LdapAuthenticationProvider {
+	private static Log sLog = LogFactory.getLog(SpringOAuth2AuthenticationProvider.class);
 
 	
-	public SpringLdapAuthenticationProvider(LdapAuthenticator authenticator) {
+	public SpringOAuth2AuthenticationProvider(LdapAuthenticator authenticator) {
 		super(authenticator);
 	}
 	
-	public SpringLdapAuthenticationProvider(LdapAuthenticator authenticator, LdapAuthoritiesPopulator authoritiesPopulator) {
+	public SpringOAuth2AuthenticationProvider(LdapAuthenticator authenticator, LdapAuthoritiesPopulator authoritiesPopulator) {
 		super(authenticator, authoritiesPopulator);
 	}
 
 	@Override
     protected DirContextOperations doAuthentication(UsernamePasswordAuthenticationToken authentication) {
-		sLog.info("TREVOR CLARIDGE: doAuthentication() ldap provider ");
+		sLog.info("TREVOR CLARIDGE: doAuthentication() oauth2 provider ");
 
 		if (ApplicationProperty.AuthenticationLdapUrl.defaultValue().equals(ApplicationProperty.AuthenticationLdapUrl.value()))
-			throw new BadCredentialsException("LDAP authentication is not configured.");
+			throw new BadCredentialsException("OAuth2 authentication is not configured.");
 		return super.doAuthentication(authentication);
 	}
 
