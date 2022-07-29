@@ -43,7 +43,7 @@ public class SpringLdapAuthenticationProvider extends LdapAuthenticationProvider
 
 	@Override
     protected DirContextOperations doAuthentication(UsernamePasswordAuthenticationToken authentication) {
-		sLog.info("TREVOR CLARIDGE: doAuthentication() ldap provider ");
+		sLog.info("TREVOR CLARIDGE: doAuthentication() ldap provider");
 
 		if (ApplicationProperty.AuthenticationLdapUrl.defaultValue().equals(ApplicationProperty.AuthenticationLdapUrl.value()))
 			throw new BadCredentialsException("LDAP authentication is not configured.");
