@@ -33,22 +33,24 @@ import org.unitime.timetable.defaults.ApplicationProperty;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.security.ldap.authentication.LdapAuthenticator;
+
+
 
 public class SpringOAuth2LoginAuthenticationProvider extends OAuth2LoginAuthenticationProvider {
 	private static Log sLog = LogFactory.getLog(SpringOAuth2LoginAuthenticationProvider.class);
 
-	
 	public SpringOAuth2LoginAuthenticationProvider(OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient, OAuth2UserService<OAuth2UserRequest,OAuth2User> userService) {
-		super(authenticator);
+		super(accessTokenResponseClient, userService);
+		sLog.info("TREVOR CLARIDGE: constructorProvider oauth2 provider.");
 	}
 
 	@Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-		sLog.info("TREVOR CLARIDGE: doAuthentication() oauth2 provider ");
+		sLog.info("TREVOR CLARIDGE: doAuthentication() oauth2 provider.");
 
 		if (ApplicationProperty.AuthenticationLdapUrl.defaultValue().equals(ApplicationProperty.AuthenticationLdapUrl.value()))
 			throw new BadCredentialsException("OAuth2 authentication is not configured.");
 		return super.authenticate(authentication);
 	}
-
 }
