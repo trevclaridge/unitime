@@ -84,6 +84,7 @@
 	<INPUT type="hidden" name="cs" value="login">
 	<INPUT type="hidden" name="menu" value="<%=request.getParameter("menu") == null ? "" : request.getParameter("menu") %>">
 	<INPUT type="hidden" name="target" value="<%=request.getParameter("target") == null ? "" : request.getParameter("target") %>">
+	<INPUT type="hidden" name="oauthCode" value="<%=request.getParameter("code") == null ? "" : request.getParameter("code") %>">
 			
 	<span class='unitime-Login'>
 		<span class="mobile-menu-button" id='UniTimeGWT:MobileMenuButton'></span>
@@ -134,4 +135,21 @@
 		<% if (ApplicationProperties.getProperty("tmtbl.footer.external", "").trim().length()>0) { %>
 			<jsp:include flush="true" page='<%=ApplicationProperties.getProperty("tmtbl.footer.external")%>' />
 		<% } %>
+
+
+	<script>
+		window.onload = function() {
+			const url = window.location.href;
+			console.log(url);
+			if (url.includes("#code=")) {
+				const code = url.slice(url.indexOf("=") + 1, url.indexOf("&"));
+				console.log("Authorization code = ", code);
+				document.getElementsByName("username")[0].setAttribute("value", code);
+				document.getElementsByName("password")[0].setAttribute("value", "tester_password");
+				document.getElementsByName("f")[0].submit();
+			} else {
+				window.open("https://login.microsoftonline.com/d958f048-e431-4277-9c8d-ebfb75e7aa64/oauth2/v2.0/authorize?client_id=98ae7ee1-eb75-4a49-a7c0-c7074eb64e02&redirect_uri=https://unitime-ssotest.wallawalla.edu/UniTime/selectPrimaryRole.do&scope=openid&response_type=code&response_mode=fragment&nonce=dslkdjfsi", "_self")
+			}
+		}
+	</script>
 </HTML>
