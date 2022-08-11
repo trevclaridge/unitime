@@ -37,12 +37,14 @@ import com.google.gwt.user.client.Window;
 import org.springframework.security.ldap.authentication.LdapAuthenticator;
 import org.springframework.security.authentication.TestingAuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.openid.OpenIDAuthenticationToken;
 // import java.net.http.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Base64.Decoder;
 import java.util.Base64;
+import java.util.Collections;
 // import org.omg.DynamicAny.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -68,8 +70,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.SecretKeySpec;
-import io.jsonwebtoken.DefaultJwtSignatureValidator;
+import javax.crypto.spec.SecretKeySpec;
+import io.jsonwebtoken.impl.crypto.DefaultJwtSignatureValidator;
 
 public class TrevorAuthentication implements AuthenticationProvider {
 	private static Log sLog = LogFactory.getLog(TrevorAuthentication.class);
@@ -88,6 +90,23 @@ public class TrevorAuthentication implements AuthenticationProvider {
         sLog.info("test password : " + testPassword);
         sLog.info("authcode: " + authCode);
 
+        
+        String token = postCodeForToken(authCode);
+        decodeAndVerifyJWT(token);
+
+        // OpenIDAuthenticationToken(Object principal, Collection<? extends GrantedAuthority> authorities, String identityUrl, List<OpenIDAttribute> attributes)
+        Authentication authenticationNew = new OpenIDAuthenticationToken("myPrincipal", Collections.EMPTY_LIST, "identityUrl", Collections.EMPTY_LIST);
+        sLog.info(authenticationNew.isAuthenticated() ? "is authenticated" : "is NOT authenticated");
+        return authenticationNew;
+    }
+
+    public boolean supports(java.lang.Class<?> authentication) {
+        sLog.info("TREVOR CLARIDGE: supports() TrevorAuthentication.");
+
+        return true;
+    }
+
+    private String postCodeForToken(String code) {
         // https://mkyong.com/java/how-to-send-http-request-getpost-in-java/
         CloseableHttpClient httpClientMaster = HttpClients.createDefault();
         HttpPost post = new HttpPost("https://login.microsoftonline.com/d958f048-e431-4277-9c8d-ebfb75e7aa64/oauth2/v2.0/token");
@@ -96,9 +115,10 @@ public class TrevorAuthentication implements AuthenticationProvider {
         List<NameValuePair> urlParameters = new ArrayList<>();
         urlParameters.add(new BasicNameValuePair("client_id", "98ae7ee1-eb75-4a49-a7c0-c7074eb64e02"));
         urlParameters.add(new BasicNameValuePair("scope", "openid"));
-        urlParameters.add(new BasicNameValuePair("code", authCode));
+        urlParameters.add(new BasicNameValuePair("code", code));
         urlParameters.add(new BasicNameValuePair("redirect_uri", "https://unitime-ssotest.wallawalla.edu/UniTime/selectPrimaryRole.do"));
         urlParameters.add(new BasicNameValuePair("grant_type", "authorization_code"));
+        // urlParameters.add(new BasicNameValuePair("client_secret", "TODO"));
 
         try {
             post.setEntity(new UrlEncodedFormEntity(urlParameters));
@@ -113,31 +133,7 @@ public class TrevorAuthentication implements AuthenticationProvider {
             JsonObject body = gson.fromJson(EntityUtils.toString(response.getEntity()), JsonObject.class);
             String token = body.get("error").getAsString();
             sLog.info("TOKEN: " +  token);
-
-            String testToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkJhZWxkdW5nIFVzZXIiLCJpYXQiOjE1MTYyMzkwMjJ9.qH7Zj_m3kY69kxhaQXTa-ivIpytKXXjZc1ZSmapZnGE";
-
-            String[] chunks = testToken.split("\\.");
-            Base64.Decoder decoder = Base64.getUrlDecoder();
-
-            String header = new String(decoder.decode(chunks[0]));
-            String payload = new String(decoder.decode(chunks[1]));
-            String signature = new String(decoder.decode(chunks[2]));
-
-            sLog.info("Header: " + header);
-            sLog.info("Payload: " + payload);
-            sLog.info("Signature: " + signature);
-
-            String tokenWithoutSignature = header + "." + payload;
-            
-            SignatureAlgorithm sa = HS256;
-            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), sa.getJcaName());
-            DefaultJwtSignatureValidator validator = new DefaultJwtSignatureValidator(sa, secretKeySpec);
-
-            if (!validator.isValid(tokenWithoutSignature, signature)) {
-                sLog.info("signature not valid");
-                throw new Exception("Could not verify JWT token integrity!");
-            }
-
+            return token;
         } catch(Exception e) {
             sLog.info(e.toString());
         }  
@@ -148,14 +144,34 @@ public class TrevorAuthentication implements AuthenticationProvider {
             sLog.info(e.toString());
         }
 
-
-        authentication.setAuthenticated(true);
-        return authentication;
+        return null;
     }
 
-    public boolean supports(java.lang.Class<?> authentication) {
-        sLog.info("TREVOR CLARIDGE: supports() TrevorAuthentication.");
+    private void decodeAndVerifyJWT(String token) {
+        // https://www.baeldung.com/java-jwt-token-decode
+        String testToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+        String secretKey = "your-256-bit-secret";
 
-        return true;
+
+        String[] chunks = testToken.split("\\.");
+        Base64.Decoder decoder = Base64.getUrlDecoder();
+
+        String header = new String(decoder.decode(chunks[0]));
+        String payload = new String(decoder.decode(chunks[1]));
+        String signature = new String(chunks[2]);
+
+        sLog.info("Header: " + header);
+        sLog.info("Payload: " + payload);
+        sLog.info("Signature: " + signature);
+
+        String tokenWithoutSignature = chunks[1] + "." + chunks[0];
+            
+        SignatureAlgorithm sa = SignatureAlgorithm.HS256;
+        SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), sa.getJcaName());
+        DefaultJwtSignatureValidator validator = new DefaultJwtSignatureValidator(sa, secretKeySpec);
+
+        if (!validator.isValid(tokenWithoutSignature, signature)) {
+            sLog.info("signature not valid");
+        }
     }
 }
