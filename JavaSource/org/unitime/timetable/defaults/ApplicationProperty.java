@@ -2726,6 +2726,11 @@ public enum ApplicationProperty {
 	
 	@Type(Boolean.class)
 	@DefaultValue("false")
+	@Description("Time Grid: when room partitions are used, show classes from the partitions in the parent room and vice versa")
+	TimeGridShowClassesAcrossPartitions("unitime.timeGrid.classesAcrossPartitions"),
+	
+	@Type(Boolean.class)
+	@DefaultValue("false")
 	@Description("Events: show academic sessions in the reverse order (latest first)")
 	ListSessionsReverse("unitime.events.listSessionsLatestFirst"),
 	
@@ -3111,6 +3116,16 @@ public enum ApplicationProperty {
 	@DefaultValue("true")
 	@Description("Manage Solvers: compute solver memory usage")
 	ManageSolversComputeMemoryUses("unitime.solvers.memory"),
+	
+	@Type(Boolean.class)
+	@DefaultValue("true")
+	@Description("Scheduling Assistant: show Degree Plan button on the Scheduling Assistant or Course Requests pages (when custom DegreePlansProvider is configured)")
+	DegreePlanForStudents("unitime.degreePlan.students"),
+	
+	@Type(Boolean.class)
+	@DefaultValue("true")
+	@Description("Course Recommendations: show Degree Plan button on the Advisor Course Recommendations page (when custom DegreePlansProvider is configured)")
+	DegreePlanForAdvisors("unitime.degreePlan.advisors"),
 
 	;
 
