@@ -27,11 +27,15 @@ import org.unitime.timetable.model.User;
 import org.unitime.timetable.model.dao.UserDAO;
 import org.unitime.timetable.security.context.UniTimeUserContext;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 /**
  * @author Tomas Muller
  */
 @Service("unitimeUserDetailsService")
 public class UniTimeUserDetailService implements UserDetailsService {
+	private static Log sLog = LogFactory.getLog(UniTimeUserDetailService.class);
 
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -43,8 +47,9 @@ public class UniTimeUserDetailService implements UserDetailsService {
 			if (user == null)
 				throw new UsernameNotFoundException("User " + username + " is not known.");
 
-			return new UniTimeUserContext(user.getExternalUniqueId(), user.getUsername(), null, user.getPassword());
-					
+			UserDetails userDetails =  new UniTimeUserContext(user.getExternalUniqueId(), user.getUsername(), null, user.getPassword());
+			sLog.info("userDetails authorities: " + userDetails.getAuthorities().toString());	
+			return userDetails;	
 		} finally {
 			hibSession.close();
 		}

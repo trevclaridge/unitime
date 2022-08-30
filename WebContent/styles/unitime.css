@@ -7289,3 +7289,10 @@ unitime-RoomSharingWidget .legend .blank {
 	padding-left: 5px;
 	padding-right: 5px;
 }
+
+.wwu-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px
+}

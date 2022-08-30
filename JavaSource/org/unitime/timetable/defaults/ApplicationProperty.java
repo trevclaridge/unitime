@@ -313,6 +313,35 @@ public enum ApplicationProperty {
 	@Description("LDAP Authentication: trim leading zeros from the user external id")
 	AuthenticationLdapIdTrimLeadingZeros("unitime.authentication.ldap.id-trim"),
 
+
+	/**
+	 * OAuth2 Authentication. 
+	 */
+	@DefaultValue("<null uri>/authorize")
+	@Description("OAuth2 Authentication: authorization url")
+	AuthorizationOAuth2AuthorizeUrl("unitime.authentication.oauth2.authorization-url"),
+	
+	@DefaultValue("<null uri>/token")
+	@Description("OAuth2 Authentication: token url")
+	AuthenticationOAuth2TokenUrl("unitime.authentication.oauth2.token-url"),
+
+	@DefaultValue("openid")
+	@Description("OAuth2 Authentication: scope")
+	AuthenticationOAuth2Scope("unitime.authentication.oauth2.scope"),
+
+	@DefaultValue("<null uri>/login.do")
+	@Description("OAuth2 Authentication: redirect_uri (<base uri of your UniTime instance>/login.do")
+	AuthenticationOAuth2RedirectUrl("unitime.authentication.oauth2.redirect-uri"),
+
+	@DefaultValue("authorization_code")
+	@Description("OAuth2 Authentication: token grant type")
+	AuthenitcationOAuth2GrantType("unitime.authentication.oauth2.token-grant-type"),
+	
+	@DefaultValue("client_id")
+	@Description("OAuth2 Authentication: client_id)")
+	AuthenticationOAuth2ClientId("unitime.authentication.oauth2.client_id"),
+
+
 	/**
 	 * Translation between LDAP uid and UniTime's external user id.
 	 */

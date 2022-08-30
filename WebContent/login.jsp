@@ -136,6 +136,37 @@
 			<jsp:include flush="true" page='<%=ApplicationProperties.getProperty("tmtbl.footer.external")%>' />
 		<% } %>
 
+		<style>
+			.wwu-button {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				height: 100px;	
+			}
+		</style>
+
+		<div class="wwu-button">
+			<button onclick="loginWithWWU()">Login with WWU</button>
+		</div>
+
+		<div class="wwu-button">
+			<button onclick="loginAsTrevor()">Login as Trevor</button>
+		</div>
+
+
+		<script>
+			function loginWithWWU() {
+				window.open("https://login.microsoftonline.com/d958f048-e431-4277-9c8d-ebfb75e7aa64/oauth2/v2.0/authorize?client_id=98ae7ee1-eb75-4a49-a7c0-c7074eb64e02&redirect_uri=https://unitime-ssotest.wallawalla.edu/UniTime/selectPrimaryRole.do&scope=openid&response_type=code&response_mode=fragment&nonce=dslkdjfsi", "_self")
+			}
+		</script>
+
+		<script>
+			function loginAsTrevor() {
+				document.getElementsByName("username")[0].setAttribute("value", "trevor");
+				document.getElementsByName("password")[0].setAttribute("value", "unitimetrev");
+				document.getElementsByName("f")[0].submit();
+			}
+		</script>
 
 	<script>
 		window.onload = function() {
@@ -144,11 +175,9 @@
 			if (url.includes("#code=")) {
 				const code = url.slice(url.indexOf("=") + 1, url.indexOf("&"));
 				console.log("Authorization code = ", code);
-				document.getElementsByName("username")[0].setAttribute("value", code);
-				document.getElementsByName("password")[0].setAttribute("value", "tester_password");
+				document.getElementsByName("username")[0].setAttribute("value", "OAuth2");
+				document.getElementsByName("password")[0].setAttribute("value", code);
 				document.getElementsByName("f")[0].submit();
-			} else {
-				window.open("https://login.microsoftonline.com/d958f048-e431-4277-9c8d-ebfb75e7aa64/oauth2/v2.0/authorize?client_id=98ae7ee1-eb75-4a49-a7c0-c7074eb64e02&redirect_uri=https://unitime-ssotest.wallawalla.edu/UniTime/selectPrimaryRole.do&scope=openid&response_type=code&response_mode=fragment&nonce=dslkdjfsi", "_self")
 			}
 		}
 	</script>
